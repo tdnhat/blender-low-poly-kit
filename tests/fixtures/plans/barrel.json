@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "asset_name": "PR_Barrel",
+  "units": "m",
+  "parts": [
+    {
+      "id": "body",
+      "op": "lathe_profile",
+      "segments": 8,
+      "caps": "both",
+      "profile_z_radius": [[0.0, 0.26], [0.45, 0.31], [0.90, 0.26]]
+    },
+    {
+      "id": "upper_band",
+      "op": "add_primitive",
+      "shape": "cylinder",
+      "segments": 8,
+      "height": 0.05,
+      "inferred": false,
+      "attachment": {
+        "parent_id": "body",
+        "rule": "lathe_radius_at_height",
+        "height": 0.72,
+        "radial_offset": 0.015
+      }
+    }
+  ]
+}
