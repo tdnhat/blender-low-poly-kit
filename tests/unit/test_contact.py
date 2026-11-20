@@ -71,3 +71,18 @@ class Contact(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ContactWithOtherParts(unittest.TestCase):
+    def test_boat_crossbar_and_stairs_not_floating(self):
+        text = json.dumps(load("boat"), indent=2)
+        r = reconcile.reconcile(text, "paste", "PR_FishingBoat", [], {})
+        self.assertEqual(r.errors, [])
+        self.assertEqual([w.code for w in r.warnings], [])
+
+    def test_part_touching_nothing_still_floating(self):
+        p = load("boat")
+        bar = [q for q in p["parts"] if q["id"] == "aframe_crossbar"][0]
+        bar["attachment"]["position"] = [0.0, -6.4, 6.5]
+        r = reconcile.reconcile(json.dumps(p, indent=2), "paste", "PR_FishingBoat", [], {})
+        self.assertIn(("plan_part_floating", "aframe_crossbar"), [(w.code, w.params["id"]) for w in r.warnings])

@@ -112,7 +112,12 @@ def in_contact(mesh_a, mesh_b, tol=TOL):
 
 
 def floating_parts(resolved_parts, tol=TOL):
-    """[(part id, parent id)] for attached parts that do not touch their parent."""
+    """[(part id, parent id)] for attached parts that touch no other part.
+
+    The parent is tested first; a part that misses its parent but touches
+    another part (a crossbar resting on frame legs, stairs between deck and
+    roof) is not floating.
+    """
     by_id = {r.id: r for r in resolved_parts}
     meshes = {}
 
@@ -129,6 +134,11 @@ def floating_parts(resolved_parts, tol=TOL):
         parent = by_id.get(att["parent_id"])
         if parent is None or parent.geom is None:
             continue
-        if not in_contact(mesh(r), mesh(parent), tol):
-            out.append((r.id, parent.id))
+        if in_contact(mesh(r), mesh(parent), tol):
+            continue
+        box = _bbox(mesh(r)[0])
+        others = (o for o in resolved_parts if o.id not in (r.id, parent.id) and o.geom is not None)
+        if any(_bbox_overlap(box, _bbox(mesh(o)[0]), tol) and in_contact(mesh(r), mesh(o), tol) for o in others):
+            continue
+        out.append((r.id, parent.id))
     return out

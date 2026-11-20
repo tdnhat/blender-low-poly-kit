@@ -95,7 +95,7 @@ TEXTS = {
     "plan_section_not_monotone": "Part '{id}': section {section} cần profile đơn điệu theo tọa độ thứ nhất (mỗi đường thẳng đứng chỉ cắt viền tối đa hai lần).",
     "plan_segment_on_section": "Part '{id}': profile_segment chỉ gắn được vào khối đùn section box; '{parent}' dùng section khác, hãy dùng offset.",
     "plan_surface_point_outside": "Part '{id}': điểm ({a}, {b}) nằm ngoài profile của '{parent}', không có mặt thân để gắn.",
-    "plan_part_floating": "Part '{id}' không chạm part cha '{parent}' (lơ lửng). Kiểm tra vị trí, normal_offset và góc xoay.",
+    "plan_part_floating": "Part '{id}' không chạm part nào, kể cả part cha '{parent}' (lơ lửng). Kiểm tra vị trí, normal_offset và góc xoay.",
     "plan_positive_normal_offset": "Part '{id}': normal_offset = {value} m nhấc part rời khỏi mặt gắn; thường nên là 0 (gốc part là tâm đáy).",
     "plan_hull_params": "Part '{id}': chine_height và bottom_ratio chỉ dùng với section hull.",
     "plan_surface_lateral_outside": "Part '{id}': s = {s} nằm ngoài bề rộng của '{parent}' tại vị trí đó (tối đa ±{half} m).",
