@@ -19,7 +19,17 @@ def config_path():
 def reload_config():
     runtime.config_result = core_config.load(config_path())
     runtime.invalidate_checks()
+    _schedule_palette_sync()
     return runtime.config_result
+
+
+def _schedule_palette_sync():
+    from . import coloring
+
+    try:
+        coloring.schedule_palette_sync()
+    except (AttributeError, ValueError):
+        pass  # coloring not registered yet
 
 
 def get_config_result():
@@ -58,6 +68,7 @@ class LPK_OT_reload_config(bpy.types.Operator):
 @persistent
 def _on_load_post(*_args):
     runtime.clear()
+    _schedule_palette_sync()
 
 
 classes = (LPK_OT_reload_config,)
