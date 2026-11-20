@@ -31,4 +31,9 @@ Quy tắc:
 - `core/` chỉ dùng thư viện chuẩn và import nội bộ `core`.
 - Code phải chạy trên Python 3.11 (Python của Blender 4.2).
 
-Phần lớp Blender chưa được chạy thử trong Blender; test trong Blender và kiểm file trong Godot sẽ được bổ sung sau.
+Hướng dẫn sử dụng: [docs/huong-dan.md](docs/huong-dan.md). Checklist Godot: [docs/qa/godot-checklist.md](docs/qa/godot-checklist.md).
+
+## Trạng thái
+
+- v0.1 (Reference, asset root, tô màu, checker, export Godot) và PoC Build Plan đã có code.
+- Lõi `core/` có unit test chạy bằng Python hệ thống. Lớp Blender được kiểm tĩnh (import với module giả lập, đăng ký operator/panel) nhưng **chưa chạy trong Blender**; test trong Blender và kiểm file trong Godot sẽ được quyết định sau.
