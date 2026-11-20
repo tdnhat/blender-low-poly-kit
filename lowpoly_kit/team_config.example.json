@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "root_name_pattern": "^PR_[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$",
+  "root_name_example": "PR_Barrel_Broken",
+  "budget_groups": {
+    "small": {
+      "label": "Prop nhỏ",
+      "max_tris": 3000
+    },
+    "large": {
+      "label": "Prop lớn",
+      "max_tris": 8000
+    }
+  },
+  "default_budget_group": "small",
+  "warning_ratio": 0.9,
+  "pivot_tolerance": 0.005,
+  "max_materials": 1,
+  "merge_distance": 0.0001,
+  "reference_tolerance": 0.01,
+  "material_name": "M_VertexColor",
+  "color_attribute": "Color",
+  "default_color": "#C8C8C8",
+  "palette": [
+    "#2B2D42",
+    "#8D99AE",
+    "#EDF2F4",
+    "#EF233C",
+    "#D90429",
+    "#F4A261",
+    "#E9C46A",
+    "#2A9D8F",
+    "#264653",
+    "#6A994E",
+    "#A7C957",
+    "#BC6C25"
+  ],
+  "export_dir": "//export",
+  "export_subdir": "props",
+  "severity_overrides": {}
+}

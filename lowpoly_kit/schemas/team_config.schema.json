@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lowpoly_kit/team_config.schema.json",
+  "title": "LowPoly Kit team config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "root_name_pattern": {"type": "string", "minLength": 1, "description": "Regex for asset root names."},
+    "root_name_example": {"type": "string"},
+    "budget_groups": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["max_tris"],
+        "properties": {
+          "label": {"type": "string"},
+          "max_tris": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "default_budget_group": {"type": "string", "minLength": 1},
+    "warning_ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "pivot_tolerance": {"type": "number", "minimum": 0, "description": "Metres."},
+    "max_materials": {"type": "integer", "minimum": 1},
+    "merge_distance": {"type": "number", "minimum": 0, "description": "Metres, object local space."},
+    "reference_tolerance": {"type": "number", "minimum": 0, "description": "Metres, cross-view comparison."},
+    "material_name": {"type": "string", "minLength": 1},
+    "color_attribute": {"type": "string", "minLength": 1},
+    "default_color": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"},
+    "palette": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"}
+    },
+    "export_dir": {"type": "string", "minLength": 1},
+    "export_subdir": {"type": "string"},
+    "severity_overrides": {
+      "type": "object",
+      "additionalProperties": {"enum": ["ERROR", "WARNING", "INFO", "OFF"]}
+    }
+  }
+}
