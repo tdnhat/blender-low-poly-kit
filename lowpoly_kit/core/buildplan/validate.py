@@ -139,6 +139,8 @@ def _semantic(plan, col, mode):
                 col.add("plan_profile_degenerate", {"id": p["id"]}, ptr + "/profile")
             elif geometry2d.self_intersects(prof):
                 col.add("plan_profile_self_intersect", {"id": p["id"]}, ptr + "/profile")
+            elif p.get("section", "box") != "box" and geometry2d.monotone_chains(prof) is None:
+                col.add("plan_section_not_monotone", {"id": p["id"], "section": p["section"]}, ptr + "/profile")
 
     for i, p in enumerate(parts):
         att = p.get("attachment")
@@ -172,6 +174,9 @@ def _semantic(plan, col, mode):
             if parent["op"] != "extrude_profile":
                 col.add("plan_rule_parent_type", {"id": p["id"], "rule": rule, "expected": "extrude_profile",
                                                   "parent": parent["id"], "actual": parent["op"]}, ptr + "/parent_id")
+                continue
+            if parent.get("section", "box") != "box":
+                col.add("plan_segment_on_section", {"id": p["id"], "parent": parent["id"]}, ptr + "/parent_id")
                 continue
             n = len(parent["profile"])
             if att["segment"] >= n:

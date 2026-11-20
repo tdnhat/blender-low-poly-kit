@@ -91,3 +91,52 @@ def triangulate(points):
     if not ccw:
         tris = [(a, c, b) for a, b, c in tris]
     return tris
+
+
+def monotone_chains(points, eps=1e-12):
+    """Split a polygon into lower and upper chains along the first coordinate.
+
+    Returns (lower, upper) as lists of points ordered by increasing first
+    coordinate, or None when the polygon is not monotone in that direction
+    (a vertical line would cross its outline more than twice).
+    """
+    n = len(points)
+    i_min = min(range(n), key=lambda i: (points[i][0], points[i][1]))
+    i_max = max(range(n), key=lambda i: (points[i][0], -points[i][1]))
+
+    def walk(start, end, step):
+        chain = [points[start]]
+        i = start
+        while i != end:
+            i = (i + step) % n
+            chain.append(points[i])
+        return chain
+
+    c1 = walk(i_min, i_max, 1)
+    c2 = walk(i_min, i_max, -1)
+    for chain in (c1, c2):
+        for k in range(len(chain) - 1):
+            if chain[k + 1][0] < chain[k][0] - eps:
+                return None
+    # Vertical runs are only allowed at the two ends.
+    for chain in (c1, c2):
+        for k in range(1, len(chain) - 2):
+            if abs(chain[k + 1][0] - chain[k][0]) <= eps:
+                return None
+    mid = lambda c: sum(p[1] for p in c) / len(c)  # noqa: E731
+    lower, upper = (c1, c2) if mid(c1) <= mid(c2) else (c2, c1)
+    return lower, upper
+
+
+def chain_value(chain, a, pick=min):
+    """Second coordinate of a monotone chain at first coordinate ``a``."""
+    values = []
+    for p, q in zip(chain, chain[1:]):
+        if p[0] <= a <= q[0]:
+            if abs(q[0] - p[0]) < 1e-12:
+                values += [p[1], q[1]]
+            else:
+                values.append(p[1] + (q[1] - p[1]) * (a - p[0]) / (q[0] - p[0]))
+    if not values:
+        raise ValueError("outside chain")
+    return pick(values)

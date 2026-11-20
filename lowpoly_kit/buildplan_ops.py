@@ -208,6 +208,7 @@ class LPK_OT_plan_copy_errors(bpy.types.Operator):
 SEGMENT_ITEMS = [("4", "4", ""), ("8", "8", ""), ("12", "12", ""), ("16", "16", "")]
 CAPS_ITEMS = [("both", "Hai đầu", ""), ("top", "Trên", ""), ("bottom", "Dưới", ""), ("none", "Không", "")]
 FACE_ITEMS = [(f, f, "") for f in ("+X", "-X", "+Y", "-Y", "+Z", "-Z")]
+SECTION_ITEMS = [("box", "Box", "Hông phẳng"), ("diamond", "Diamond", "Hình thoi"), ("hexagon", "Hexagon", "Lục giác")]
 PLANE_ITEMS = [("YZ", "YZ (Right)", ""), ("XZ", "XZ (Front)", ""), ("XY", "XY (Top)", "")]
 
 
@@ -223,6 +224,7 @@ class LPK_OT_plan_edit_part(bpy.types.Operator):
     segments: bpy.props.EnumProperty(name="Số cạnh", items=SEGMENT_ITEMS)
     caps: bpy.props.EnumProperty(name="Nắp", items=CAPS_ITEMS)
     plane: bpy.props.EnumProperty(name="Mặt phẳng", items=PLANE_ITEMS)
+    section: bpy.props.EnumProperty(name="Mặt cắt", items=SECTION_ITEMS)
     size: bpy.props.FloatVectorProperty(name="Kích thước", size=3, min=0.0001, unit="LENGTH")
     radius: bpy.props.FloatProperty(name="Bán kính (tới mặt)", min=0.0001, unit="LENGTH")
     height: bpy.props.FloatProperty(name="Chiều cao", min=0.0001, unit="LENGTH")

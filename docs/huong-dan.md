@@ -53,7 +53,7 @@ Panel **Build Plan (PoC)** (đóng mặc định):
    - `python3 tools/poc_metrics.py outline reference.png model.png`
    - `python3 tools/poc_metrics.py fields build_log.jsonl` (lưu Text `<root>.buildplan.log.jsonl` ra file trước) để đếm thông số đã chỉnh.
 
-Thân thon (cá, chim, tàu): `extrude_profile` với `thickness_profile` lấy bề dày từ ảnh Top. Bộ phận hai bên: khai báo bên phải với `"mirror": "X"`, add-on tự sinh bên trái (`<id>_mirror`); muốn chỉnh thì chỉnh part gốc.
+Thân thon (cá, chim, tàu): `extrude_profile` với `thickness_profile` lấy bề dày từ ảnh Top, thêm `"section": "diamond"` hoặc `"hexagon"` để mặt cắt ngang phình ở giữa. Bộ phận hai bên: khai báo bên phải với `"mirror": "X"`, add-on tự sinh bên trái (`<id>_mirror`); muốn chỉnh thì chỉnh part gốc.
 
 Quy tắc gắn: `lathe_radius_at_height` (đai quanh khối tiện), `profile_segment` (lên mặt khối đùn), `box_face` (lên mặt hộp: chân ghế, tựa lưng), `offset` (vị trí, góc tự do trong hệ của cha).
 

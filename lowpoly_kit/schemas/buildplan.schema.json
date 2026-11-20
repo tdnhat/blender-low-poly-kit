@@ -190,6 +190,14 @@
             "none"
           ]
         },
+        "section": {
+          "enum": [
+            "box",
+            "diamond",
+            "hexagon"
+          ],
+          "description": "Cross-section across the thickness. box = flat sides (default); diamond / hexagon bulge at mid-height. diamond and hexagon need a profile monotone along its first coordinate."
+        },
         "profile": {
           "type": "array",
           "minItems": 3,

@@ -5,7 +5,7 @@ import copy
 # Direct part fields per kind of part.
 PART_FIELDS = {
     "lathe_profile": ("segments", "caps"),
-    "extrude_profile": ("depth", "caps", "plane"),
+    "extrude_profile": ("depth", "caps", "plane", "section"),
     "box": ("size",),
     "cylinder": ("segments", "radius", "height"),
 }
