@@ -14,10 +14,16 @@ Bạn tạo **Build Plan JSON** cho add-on Blender LowPoly Kit. Add-on đọc JS
 3. **Lập danh sách bộ phận** (viết ngắn trong đầu hoặc nháp): bộ phận chính (đúng một part không gắn), các bộ phận gắn vào nó, bộ phận đối xứng (khai báo bên phải + `mirror`), chi tiết bỏ qua (màu, cửa sổ, nội thất → tô vertex color hoặc bỏ). Nếu user yêu cầu duyệt trước, trình bày danh sách này và chờ xác nhận.
 4. **Chọn op và quy tắc gắn** theo `reference/asset_tips.md` và quy ước bên dưới.
 5. **Viết JSON** vào file `plan.json`.
-6. **Kiểm tra:** chạy `python3 scripts/validate_plan.py plan.json`. Đọc lỗi và cảnh báo (theo part và trường), đối chiếu bảng khung bao của từng part với số đo và ảnh. Sửa rồi chạy lại cho tới khi kết quả là `OK` (exit code 0). Không trả plan còn lỗi hoặc cảnh báo; nếu một cảnh báo là chủ ý, nói rõ lý do.
+6. **Kiểm tra:** chạy `python3 scripts/validate_plan.py plan.json` (thêm `--target-tris N` khi mức chi tiết là "Chi tiết"). Đọc lỗi và cảnh báo (theo part và trường), đối chiếu bảng khung bao của từng part với số đo và ảnh. Sửa rồi chạy lại cho tới khi kết quả là `OK` (exit code 0; exit 3 nghĩa là số tris lệch mục tiêu). Không trả plan còn lỗi hoặc cảnh báo; nếu một cảnh báo là chủ ý, nói rõ lý do.
 7. **Trả kết quả:** một khối ```json chứa toàn bộ plan, sau đó tối đa 5 dòng tóm tắt (số part, tris, các chi tiết `inferred`, giả định quan trọng).
 
 Khi user dán lại lỗi hoặc cảnh báo từ add-on (nút "Copy lỗi cho chatbot"): sửa đúng các mục đó, chạy lại validator, trả lại toàn bộ JSON.
+
+## Mức chi tiết
+
+Prompt ghi một trong hai mức:
+- **Blockout** (mặc định): khối chính và tỷ lệ, ít part, khối tròn 8 cạnh, lan can/cầu thang liền khối, cửa sổ để tô màu. Không có mục tiêu tris.
+- **Chi tiết** với mục tiêu N tris (chấp nhận 70–130%): xem phần "Mức chi tiết" trong `reference/asset_tips.md`. Không bịa chi tiết không có trong ảnh; nếu đã dựng hết chi tiết nhìn thấy mà vẫn dưới mục tiêu, nói rõ thay vì thêm chi tiết giả.
 
 ## Quy ước bắt buộc
 

@@ -185,6 +185,10 @@ class LPK_PT_buildplan(_Panel, bpy.types.Panel):
             layout.prop(scene, "lpk_plan_asset_name")
         layout.prop(scene, "lpk_plan_notes", text="Ghi chú")
         row = layout.row(align=True)
+        row.prop(scene, "lpk_detail_level", expand=True)
+        if scene.lpk_detail_level == "DETAILED":
+            layout.prop(scene, "lpk_target_tris")
+        row = layout.row(align=True)
         row.prop(scene, "lpk_prompt_mode", expand=True)
         if scene.lpk_prompt_mode == "SKILL":
             layout.prop(scene, "lpk_prompt_review")

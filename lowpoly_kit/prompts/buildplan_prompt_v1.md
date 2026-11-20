@@ -7,7 +7,7 @@ Bạn là trợ lý dựng blockout low-poly cho game. Tôi gửi kèm các ản
 - Hệ trục Blender: +X sang phải khi nhìn Front, +Y hướng ra sau (Front nhìn theo +Y), +Z hướng lên. Gốc tọa độ là đáy giữa của prop.
 - **Hướng của prop:** mặt trước của prop (mặt mà ảnh Front chụp: đầu con vật, mặt máy, mặt tủ...) hướng về **−Y**. Ví dụ con cá có ảnh Front chụp đầu cá thì đầu nằm ở phía y âm, đuôi ở phía y dương. Bên phải của prop (ảnh Right) là phía +X.
 - Đúng **một** part không có `attachment` (thân chính, đặt tại gốc). Mọi part khác gắn vào part khác bằng `attachment`.
-- `segments` của khối tròn chỉ nhận 4, 8, 12 hoặc 16. Bán kính là **bán kính tới mặt**: bằng nửa bề rộng silhouette nhìn từ Front/Right.
+- `segments` của khối tròn chỉ nhận 4, 8, 12, 16, 24 hoặc 32. Bán kính là **bán kính tới mặt**: bằng nửa bề rộng silhouette nhìn từ Front/Right.
 - `lathe_profile`: cặp `[độ cao, bán kính]` từ đáy, độ cao tăng ngặt.
 - `extrude_profile`: điểm là cặp tọa độ theo thứ tự chữ của `plane` (`YZ` → `[y, z]`, mặt cắt nhìn từ Right, đùn theo X), đa giác kín không tự cắt, đùn đối xứng. Khai báo **đúng một** trong hai: `depth` (bề dày không đổi) hoặc `thickness_profile` (bề dày thay đổi).
 - `thickness_profile`: các cặp `[vị trí, bề dày toàn phần]` theo tọa độ thứ nhất của profile (với `YZ` là theo y), vị trí tăng ngặt, bề dày > 0, đọc từ ảnh Top (hoặc Front). Dùng cho thân thon dần như cá, chim, tàu, xe: mặt cắt dọc lấy từ ảnh Right, bề dày theo chiều dài lấy từ ảnh Top.
@@ -25,6 +25,10 @@ Bạn là trợ lý dựng blockout low-poly cho game. Tôi gửi kèm các ản
 - Chi tiết khuất hoặc phải đoán: thêm `"inferred": true`.
 - **Không** sinh các trường `baked` hoặc `baked_params`.
 - Chỉ dùng các operation có trong schema: `add_primitive` (box, cylinder), `lathe_profile`, `extrude_profile`.
+
+## Mức chi tiết
+
+{{detail}}
 
 ## Ảnh đính kèm
 

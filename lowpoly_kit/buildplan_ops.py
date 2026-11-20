@@ -186,11 +186,13 @@ class LPK_OT_plan_copy_prompt(bpy.types.Operator):
         views = [(e[reference.VIEW_PROP], bool(reference.read_data(e).get("cal")))
                  for e in reference.ref_empties(context.scene)]
         scene = context.scene
+        detail, target = scene.lpk_detail_level, scene.lpk_target_tris
         if scene.lpk_prompt_mode == "SKILL":
             text = core_prompt.build_skill_prompt(asset_name, rows, views, notes=scene.lpk_plan_notes,
-                                                  review=scene.lpk_prompt_review)
+                                                  review=scene.lpk_prompt_review, detail=detail, target_tris=target)
         else:
-            text = core_prompt.build_prompt(asset_name, core_validate.schema_text(), rows, views, notes=scene.lpk_plan_notes)
+            text = core_prompt.build_prompt(asset_name, core_validate.schema_text(), rows, views, notes=scene.lpk_plan_notes,
+                                            detail=detail, target_tris=target)
         context.window_manager.clipboard = text
         missing = [v for v, ok in views if not ok]
         msg = f"Đã chép prompt cho {asset_name} ({len(rows)} số đo). Nhớ đính kèm ảnh: {', '.join(v for v, _ in views) or 'các ảnh ortho'}"
@@ -217,7 +219,7 @@ class LPK_OT_plan_copy_errors(bpy.types.Operator):
         return {"FINISHED"}
 
 
-SEGMENT_ITEMS = [("4", "4", ""), ("8", "8", ""), ("12", "12", ""), ("16", "16", "")]
+SEGMENT_ITEMS = [(str(n), str(n), "") for n in (4, 8, 12, 16, 24, 32)]
 CAPS_ITEMS = [("both", "Hai đầu", ""), ("top", "Trên", ""), ("bottom", "Dưới", ""), ("none", "Không", "")]
 FACE_ITEMS = [(f, f, "") for f in ("+X", "-X", "+Y", "-Y", "+Z", "-Z")]
 SECTION_ITEMS = [("box", "Box", "Hông phẳng"), ("diamond", "Diamond", "Hình thoi"), ("hexagon", "Hexagon", "Lục giác"),
@@ -493,6 +495,13 @@ def register():
         default="FULL")
     bpy.types.Scene.lpk_prompt_review = bpy.props.BoolProperty(
         name="Duyệt danh sách bộ phận trước", description="Yêu cầu AI liệt kê bộ phận và chờ xác nhận trước khi viết JSON")
+    bpy.types.Scene.lpk_detail_level = bpy.props.EnumProperty(
+        name="Mức chi tiết",
+        items=[("BLOCKOUT", "Blockout", "Khối chính và tỷ lệ, ít tris"),
+               ("DETAILED", "Chi tiết", "Thêm chi tiết nhìn thấy trong ảnh, nhắm tới số tris mục tiêu")],
+        default="BLOCKOUT")
+    bpy.types.Scene.lpk_target_tris = bpy.props.IntProperty(
+        name="Tris mục tiêu", min=200, max=100000, default=2500, description="Số tris mục tiêu khi mức chi tiết là Chi tiết")
     bpy.types.Scene.lpk_plan_notes = bpy.props.StringProperty(
         name="Ghi chú cho AI", description="Ghi chú thêm đưa vào prompt; ngăn cách các ý bằng dấu chấm phẩy")
     bpy.types.Scene.lpk_poc_reference_mask = bpy.props.StringProperty(
@@ -500,6 +509,8 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.lpk_target_tris
+    del bpy.types.Scene.lpk_detail_level
     del bpy.types.Scene.lpk_prompt_review
     del bpy.types.Scene.lpk_prompt_mode
     del bpy.types.Scene.lpk_plan_notes

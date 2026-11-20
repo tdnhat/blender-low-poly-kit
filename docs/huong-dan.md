@@ -43,7 +43,7 @@ Xem `lowpoly_kit/team_config.example.json` và schema `lowpoly_kit/schemas/team_
 
 Panel **Build Plan (PoC)** (đóng mặc định):
 
-1. **Copy Prompt** (có ô **Ghi chú** đưa thêm số đo, vị trí bộ phận vào prompt; các ý cách nhau bằng dấu chấm phẩy): chép prompt gồm schema và các số đo đã xác nhận ở bước Reference. Dán vào claude.ai hoặc ChatGPT kèm ảnh ortho (chỉ ảnh team cho phép gửi), rồi copy JSON chatbot trả về.
+1. **Copy Prompt** (chọn **Mức chi tiết**: Blockout, hoặc Chi tiết kèm số tris mục tiêu; có ô **Ghi chú** đưa thêm số đo, vị trí bộ phận vào prompt; các ý cách nhau bằng dấu chấm phẩy): chép prompt gồm schema và các số đo đã xác nhận ở bước Reference. Dán vào claude.ai hoặc ChatGPT kèm ảnh ortho (chỉ ảnh team cho phép gửi), rồi copy JSON chatbot trả về.
 2. **Dán Plan**: dựng blockout từ JSON trong clipboard. Chưa chọn root thì add-on tạo root từ `asset_name`. Part ước lượng (`inferred`) có object color cam (bật Viewport Shading › Color › Object để thấy).
 3. **Mở plan** / **Rebuild**: plan nằm trong Text `<root>.buildplan.json`. Sửa JSON trong Text Editor rồi bấm **Rebuild** (có cả ở sidebar Text Editor). Lỗi hiện theo dòng:cột và con trỏ nhảy tới chỗ lỗi; dựng lỗi thì giữ bản dựng gần nhất.
 4. **Chỉnh part**: chọn object của một part (chưa bake) rồi bấm **Chỉnh part** để đổi số cạnh, kích thước, hệ số bán kính/chiều cao/profile và tham số gắn; add-on ghi vào plan và dựng lại.

@@ -38,17 +38,35 @@ def format_notes(notes):
     return "\n".join(ln if ln.startswith("-") else f"- {ln}" for ln in lines) if lines else "- (không có)"
 
 
-def build_prompt(asset_name, schema_text, measurements, views=(), template=None, notes=""):
+DETAIL_TEXT = {
+    "BLOCKOUT": ("**Blockout.** Chỉ dựng khối chính và tỷ lệ: ít part, khối tròn 8 cạnh, lan can và cầu thang "
+                 "giản lược thành tấm hoặc thanh liền, cửa sổ để tô màu. Không cần đạt số tris nào."),
+    "DETAILED": ("**Chi tiết**, mục tiêu khoảng **{target} tris** (chấp nhận 70–130%). Thân và khối chính dùng profile nhiều "
+                 "điểm hơn để đường cong mượt; khối tròn 12–16 cạnh (24–32 cho chi tiết lớn nhìn gần); tách chi tiết lặp "
+                 "lại thành part riêng (cột lan can, bậc thang, đinh, tay cầm); khung cửa sổ và viền bằng hộp mỏng gắn "
+                 "lên mặt; thêm chi tiết nhỏ có trong ảnh (đèn, móc, ống, phao). Không thêm chi tiết không có trong ảnh."),
+}
+
+
+def format_detail(level="BLOCKOUT", target_tris=0):
+    if level == "DETAILED":
+        return DETAIL_TEXT["DETAILED"].format(target=target_tris or 2500)
+    return DETAIL_TEXT["BLOCKOUT"]
+
+
+def build_prompt(asset_name, schema_text, measurements, views=(), template=None, notes="",
+                 detail="BLOCKOUT", target_tris=0):
     template = load_template() if template is None else template
     return (template
             .replace("{{asset_name}}", asset_name)
             .replace("{{views}}", format_views(views))
             .replace("{{notes}}", format_notes(notes))
+            .replace("{{detail}}", format_detail(detail, target_tris))
             .replace("{{measurements}}", format_measurements(measurements))
             .replace("{{schema}}", schema_text.strip()))
 
 
-def build_skill_prompt(asset_name, measurements, views=(), notes="", review=False):
+def build_skill_prompt(asset_name, measurements, views=(), notes="", review=False, detail="BLOCKOUT", target_tris=0):
     """Short prompt for use with the lowpoly-build-plan skill (rules live in the skill)."""
     with open(SKILL_TEMPLATE_PATH, encoding="utf-8") as f:
         template = f.read()
@@ -57,6 +75,8 @@ def build_skill_prompt(asset_name, measurements, views=(), notes="", review=Fals
             .replace("{{views}}", format_views(views))
             .replace("{{measurements}}", format_measurements(measurements))
             .replace("{{notes}}", format_notes(notes))
+            .replace("{{detail}}", format_detail(detail, target_tris))
+            .replace("{{target_arg}}", f" --target-tris {target_tris or 2500}" if detail == "DETAILED" else "")
             .replace("{{review}}", REVIEW_STEP if review else "")).rstrip() + "\n"
 
 

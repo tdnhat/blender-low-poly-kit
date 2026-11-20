@@ -85,3 +85,36 @@ class SkillPrompt(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DetailLevel(unittest.TestCase):
+    def test_prompts_carry_detail(self):
+        from lowpoly_kit.core.buildplan import validate
+        full = prompt.build_prompt("PR_Boat", validate.schema_text(), [], [], detail="DETAILED", target_tris=3000)
+        self.assertIn("3000 tris", full)
+        self.assertNotIn("{{", full)
+        skill = prompt.build_skill_prompt("PR_Boat", [], [], detail="DETAILED", target_tris=3000)
+        self.assertIn("--target-tris 3000", skill)
+        self.assertIn("**Chi tiết**", skill)
+        block = prompt.build_skill_prompt("PR_Boat", [], [])
+        self.assertIn("**Blockout.**", block)
+        self.assertNotIn("--target-tris", block)
+
+    def test_segments_24_32(self):
+        from lowpoly_kit.core.buildplan import geometry
+        for n in (24, 32):
+            g = geometry.cylinder(0.5, 1.0, n)
+            self.assertAlmostEqual(max(v[0] for v in g.verts), 0.5)
+
+
+class TargetTris(AiSkill):
+    def test_target_exit_code(self):
+        r = self.run_validator("examples/boat.json")
+        self.assertEqual(r.returncode, 0)
+        r = subprocess.run([sys.executable, "-I", "scripts/validate_plan.py", "examples/boat.json", "--target-tris", "3000"],
+                           cwd=self.folder, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 3, r.stdout)
+        self.assertIn("Below target", r.stdout)
+        r = subprocess.run([sys.executable, "-I", "scripts/validate_plan.py", "examples/boat.json", "--target-tris", "450"],
+                           cwd=self.folder, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout)

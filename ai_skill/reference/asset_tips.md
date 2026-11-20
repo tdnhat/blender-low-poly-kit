@@ -34,6 +34,20 @@ Rút ra từ các lần thử thật với add-on. Xem plan mẫu tương ứng 
 - Khung chữ A: hai chân thẳng đứng (`mirror`), thanh chéo gắn boong rồi xoay quanh Y để gặp đỉnh chân, thanh ngang đặt `offset` sao cho chạm đỉnh hai chân.
 - Lan can: vài thanh mảnh dài là đủ; đặt `s` lùi vào trong mép thân vài cm để không thò ra ngoài. Ở mũi thon, rút ngắn hoặc xoay thanh cho khớp mép.
 
+## Mức chi tiết "Chi tiết"
+
+Cách tăng chi tiết có ích, theo thứ tự ưu tiên:
+
+1. **Đường cong thân:** thêm điểm cho profile và `thickness_profile` ở những chỗ cong (mũi, đuôi, vai). Mỗi điểm thêm một vòng mặt.
+2. **Khối tròn:** 12–16 cạnh cho trụ, thân tiện; 24–32 chỉ cho chi tiết lớn nhìn gần (bánh lái, trống tời lớn).
+3. **Chi tiết lặp lại thành part riêng:** cột lan can (cách đều, ví dụ mỗi 1 m), bậc thang (mỗi bậc một hộp mỏng gắn `offset` theo bậc), đinh, tay nắm, móc. Dùng `mirror` cho hai bên.
+4. **Viền và khung:** khung cửa sổ, viền mép boong, viền cửa bằng hộp mỏng gắn `box_face` hoặc `body_surface` sát mặt.
+5. **Chi tiết nhỏ có trong ảnh:** đèn, ống, phao, dây néo (thanh mảnh), ăng-ten.
+
+Ước lượng: hộp 12 tris, trụ n cạnh khoảng 4n tris, thân `hull`/`hexagon` khoảng 12 tris mỗi điểm profile. Chạy validator với `--target-tris` để biết đã đạt chưa.
+
+Không có thao tác vát cạnh (bevel); artist sẽ vát trong Blender nếu cần.
+
 ## Lỗi hay gặp (validator bắt được)
 
 | Lỗi | Cách tránh |
