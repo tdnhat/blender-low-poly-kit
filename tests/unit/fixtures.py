@@ -23,3 +23,18 @@ def export_fixture():
         node("OtherMesh", "MESH", "PR_Other"),
     ]
     return sc.index(nodes)
+
+
+def cube_mesh(det_sign=1, flip_face=None, open_face=None, size=1.0):
+    """Unit cube with outward winding (Blender default vertex order)."""
+    from lowpoly_kit.core.checks.topology import MeshData, edge_key, face_edges
+
+    s = size / 2
+    verts = [(-s, -s, -s), (-s, -s, s), (-s, s, -s), (-s, s, s), (s, -s, -s), (s, -s, s), (s, s, -s), (s, s, s)]
+    faces = [(0, 1, 3, 2), (2, 3, 7, 6), (6, 7, 5, 4), (4, 5, 1, 0), (2, 6, 4, 0), (7, 3, 1, 5)]
+    if flip_face is not None:
+        faces[flip_face] = tuple(reversed(faces[flip_face]))
+    if open_face is not None:
+        faces.pop(open_face)
+    edges = sorted({edge_key(a, b) for f in faces for a, b in face_edges(f)})
+    return MeshData(verts, edges, faces, det_sign)
