@@ -194,9 +194,22 @@
           "enum": [
             "box",
             "diamond",
-            "hexagon"
+            "hexagon",
+            "hull"
           ],
-          "description": "Cross-section across the thickness. box = flat sides (default); diamond / hexagon bulge at mid-height. diamond and hexagon need a profile monotone along its first coordinate."
+          "description": "Cross-section across the thickness. box = flat sides (default); diamond / hexagon bulge at mid-height; hull = full width at the top (deck) down to the chine, then narrowing to a flat bottom. Non-box sections need a profile monotone along its first coordinate."
+        },
+        "chine_height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1,
+          "description": "hull: height of the chine as a fraction of the local height, from the bottom (default 0.45)."
+        },
+        "bottom_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "hull: bottom width as a fraction of the full width (default 0.4; 0 = V keel)."
         },
         "profile": {
           "type": "array",
@@ -506,9 +519,15 @@
         "side": {
           "enum": [
             "+",
-            "-"
+            "-",
+            "top",
+            "bottom"
           ],
-          "description": "Which side along the extrude axis (+X for plane YZ)."
+          "description": "+/- = along the extrude axis (sides, +X for plane YZ); top/bottom = along the second profile axis (deck / underside, +Z for plane YZ)."
+        },
+        "s": {
+          "type": "number",
+          "description": "top/bottom: lateral position along the extrude axis (x for plane YZ), default 0."
         },
         "normal_offset": {
           "type": "number"

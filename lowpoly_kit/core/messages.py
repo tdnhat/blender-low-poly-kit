@@ -97,6 +97,8 @@ TEXTS = {
     "plan_surface_point_outside": "Part '{id}': điểm ({a}, {b}) nằm ngoài profile của '{parent}', không có mặt thân để gắn.",
     "plan_part_floating": "Part '{id}' không chạm part cha '{parent}' (lơ lửng). Kiểm tra vị trí, normal_offset và góc xoay.",
     "plan_positive_normal_offset": "Part '{id}': normal_offset = {value} m nhấc part rời khỏi mặt gắn; thường nên là 0 (gốc part là tâm đáy).",
+    "plan_hull_params": "Part '{id}': chine_height và bottom_ratio chỉ dùng với section hull.",
+    "plan_surface_lateral_outside": "Part '{id}': s = {s} nằm ngoài bề rộng của '{parent}' tại vị trí đó (tối đa ±{half} m).",
     "plan_managed_field": "Part '{id}': plan dán vào không được chứa trường '{field}' (do add-on quản lý).",
     "plan_baked_mismatch": "Part '{id}': '{field}' khác trạng thái bake đang lưu trên object.",
     "plan_baked_without_object": "Part '{id}' khai đã bake nhưng không có object đã bake tương ứng.",

@@ -87,7 +87,7 @@ def attach_matrix(child, parent_eff, parent_computed):
     if rule == "body_surface":
         parent_geom = geometry.build(parent_eff, parent_computed)
         frame = geometry.body_surface_frame(parent_geom, parent_eff["plane"], att["a"], att["b"], att["side"],
-                                            att["normal_offset"])
+                                            att["normal_offset"], att.get("s", 0.0))
         if att.get("rotation"):
             frame = vm.matmul(frame, vm.euler_xyz(att["rotation"]))
         return frame, {}

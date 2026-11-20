@@ -43,7 +43,7 @@ Xem `lowpoly_kit/team_config.example.json` và schema `lowpoly_kit/schemas/team_
 
 Panel **Build Plan (PoC)** (đóng mặc định):
 
-1. **Copy Prompt**: chép prompt gồm schema và các số đo đã xác nhận ở bước Reference. Dán vào claude.ai hoặc ChatGPT kèm ảnh ortho (chỉ ảnh team cho phép gửi), rồi copy JSON chatbot trả về.
+1. **Copy Prompt** (có ô **Ghi chú** đưa thêm số đo, vị trí bộ phận vào prompt; các ý cách nhau bằng dấu chấm phẩy): chép prompt gồm schema và các số đo đã xác nhận ở bước Reference. Dán vào claude.ai hoặc ChatGPT kèm ảnh ortho (chỉ ảnh team cho phép gửi), rồi copy JSON chatbot trả về.
 2. **Dán Plan**: dựng blockout từ JSON trong clipboard. Chưa chọn root thì add-on tạo root từ `asset_name`. Part ước lượng (`inferred`) có object color cam (bật Viewport Shading › Color › Object để thấy).
 3. **Mở plan** / **Rebuild**: plan nằm trong Text `<root>.buildplan.json`. Sửa JSON trong Text Editor rồi bấm **Rebuild** (có cả ở sidebar Text Editor). Lỗi hiện theo dòng:cột và con trỏ nhảy tới chỗ lỗi; dựng lỗi thì giữ bản dựng gần nhất.
 4. **Chỉnh part**: chọn object của một part (chưa bake) rồi bấm **Chỉnh part** để đổi số cạnh, kích thước, hệ số bán kính/chiều cao/profile và tham số gắn; add-on ghi vào plan và dựng lại.
@@ -55,6 +55,6 @@ Panel **Build Plan (PoC)** (đóng mặc định):
 
 Thân thon (cá, chim, tàu): `extrude_profile` với `thickness_profile` lấy bề dày từ ảnh Top, thêm `"section": "diamond"` hoặc `"hexagon"` để mặt cắt ngang phình ở giữa. Bộ phận hai bên: khai báo bên phải với `"mirror": "X"`, add-on tự sinh bên trái (`<id>_mirror`); muốn chỉnh thì chỉnh part gốc.
 
-Quy tắc gắn: `lathe_radius_at_height` (đai quanh khối tiện), `profile_segment` (lên mặt khối đùn), `box_face` (lên mặt hộp: chân ghế, tựa lưng), `body_surface` (chạm đúng mặt thân cong: mắt, vây ngực), `offset` (vị trí, góc tự do trong hệ của cha).
+Quy tắc gắn: `lathe_radius_at_height` (đai quanh khối tiện), `profile_segment` (lên mặt khối đùn), `box_face` (lên mặt hộp: chân ghế, tựa lưng), `body_surface` (chạm đúng mặt thân cong: mắt, vây ngực; `side: "top"` để đặt lên boong/mặt trên), `offset` (vị trí, góc tự do trong hệ của cha).
 
 Ví dụ plan: `tests/fixtures/plans/barrel.json`, `terminal.json`, `chair.json`, `tuna.json`.

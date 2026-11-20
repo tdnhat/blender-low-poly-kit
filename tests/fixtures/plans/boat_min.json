@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "asset_name": "PR_Boat",
+  "units": "m",
+  "parts": [
+    {"id": "hull", "op": "extrude_profile", "plane": "YZ", "caps": "both", "section": "hull",
+     "chine_height": 0.45, "bottom_ratio": 0.35,
+     "profile": [[-7.0, 0.6], [-6.6, 0.0], [6.0, 0.0], [7.0, 1.2], [7.0, 3.2], [-7.0, 3.0]],
+     "thickness_profile": [[-7.0, 4.6], [3.0, 5.6], [6.2, 3.2], [7.0, 0.4]]},
+    {"id": "cabin", "op": "add_primitive", "shape": "box", "size": [2.6, 2.4, 1.8],
+     "attachment": {"parent_id": "hull", "rule": "body_surface", "a": -2.0, "b": 1.5, "side": "top", "s": 0.0,
+                    "normal_offset": 0, "align": "surface"}},
+    {"id": "crate", "op": "add_primitive", "shape": "box", "size": [0.6, 0.6, 0.4],
+     "attachment": {"parent_id": "hull", "rule": "body_surface", "a": 2.0, "b": 1.5, "side": "top", "s": 1.5,
+                    "normal_offset": 0, "align": "surface"}}
+  ]
+}

@@ -5,7 +5,7 @@ import copy
 # Direct part fields per kind of part.
 PART_FIELDS = {
     "lathe_profile": ("segments", "caps"),
-    "extrude_profile": ("depth", "caps", "plane", "section"),
+    "extrude_profile": ("depth", "caps", "plane", "section", "chine_height", "bottom_ratio"),
     "box": ("size",),
     "cylinder": ("segments", "radius", "height"),
 }
@@ -15,7 +15,7 @@ ATTACH_FIELDS = {
     "profile_segment": ("segment", "t", "normal_offset"),
     "box_face": ("face", "u", "v", "normal_offset"),
     "offset": ("position", "rotation"),
-    "body_surface": ("a", "b", "side", "normal_offset", "rotation"),
+    "body_surface": ("a", "b", "side", "s", "normal_offset", "rotation"),
 }
 
 
@@ -31,6 +31,8 @@ def editable_fields(part):
     fields = list(PART_FIELDS.get(kind, ()))
     if kind == "extrude_profile" and "thickness_profile" in part:
         fields.remove("depth")
+    if kind == "extrude_profile" and part.get("section") != "hull":
+        fields = [f for f in fields if f not in ("chine_height", "bottom_ratio")]
     if kind == "cylinder" and part.get("attachment", {}).get("rule") == "lathe_radius_at_height":
         fields.remove("radius")  # computed by the rule
     att = part.get("attachment")

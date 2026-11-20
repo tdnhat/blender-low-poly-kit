@@ -185,7 +185,8 @@ class LPK_OT_plan_copy_prompt(bpy.types.Operator):
         rows = [(m.view, m.dimension, m.meters) for m in ms]
         views = [(e[reference.VIEW_PROP], bool(reference.read_data(e).get("cal")))
                  for e in reference.ref_empties(context.scene)]
-        context.window_manager.clipboard = core_prompt.build_prompt(asset_name, core_validate.schema_text(), rows, views)
+        context.window_manager.clipboard = core_prompt.build_prompt(asset_name, core_validate.schema_text(), rows, views,
+                                                                    notes=context.scene.lpk_plan_notes)
         missing = [v for v, ok in views if not ok]
         msg = f"Đã chép prompt cho {asset_name} ({len(rows)} số đo). Nhớ đính kèm ảnh: {', '.join(v for v, _ in views) or 'các ảnh ortho'}"
         if missing:
@@ -214,7 +215,8 @@ class LPK_OT_plan_copy_errors(bpy.types.Operator):
 SEGMENT_ITEMS = [("4", "4", ""), ("8", "8", ""), ("12", "12", ""), ("16", "16", "")]
 CAPS_ITEMS = [("both", "Hai đầu", ""), ("top", "Trên", ""), ("bottom", "Dưới", ""), ("none", "Không", "")]
 FACE_ITEMS = [(f, f, "") for f in ("+X", "-X", "+Y", "-Y", "+Z", "-Z")]
-SECTION_ITEMS = [("box", "Box", "Hông phẳng"), ("diamond", "Diamond", "Hình thoi"), ("hexagon", "Hexagon", "Lục giác")]
+SECTION_ITEMS = [("box", "Box", "Hông phẳng"), ("diamond", "Diamond", "Hình thoi"), ("hexagon", "Hexagon", "Lục giác"),
+                 ("hull", "Hull", "Thân thuyền: boong rộng, đáy thu hẹp")]
 PLANE_ITEMS = [("YZ", "YZ (Right)", ""), ("XZ", "XZ (Front)", ""), ("XY", "XY (Top)", "")]
 
 
@@ -250,7 +252,11 @@ class LPK_OT_plan_edit_part(bpy.types.Operator):
     att_rotation: bpy.props.FloatVectorProperty(name="Góc (độ)", size=3)
     att_a: bpy.props.FloatProperty(name="Vị trí dọc thân (a)", unit="LENGTH")
     att_b: bpy.props.FloatProperty(name="Độ cao (b)", unit="LENGTH")
-    att_side: bpy.props.EnumProperty(name="Phía", items=[("+", "+", "Phía dương trục đùn"), ("-", "−", "Phía âm trục đùn")])
+    att_side: bpy.props.EnumProperty(name="Phía", items=[("+", "+", "Phía dương trục đùn"), ("-", "−", "Phía âm trục đùn"),
+                                                         ("top", "Trên", "Mặt trên (boong)"), ("bottom", "Dưới", "Mặt dưới")])
+    att_s: bpy.props.FloatProperty(name="Vị trí ngang (s)", unit="LENGTH")
+    chine_height: bpy.props.FloatProperty(name="Độ cao góc gãy", min=0.01, max=0.99, default=0.45)
+    bottom_ratio: bpy.props.FloatProperty(name="Tỷ lệ đáy", min=0.0, max=1.0, default=0.4)
 
     _fields = ()
     _att_fields = ()
@@ -475,11 +481,14 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.lpk_plan_asset_name = bpy.props.StringProperty(
         name="Tên asset", description="Tên asset cho Copy Prompt khi chưa có root")
+    bpy.types.Scene.lpk_plan_notes = bpy.props.StringProperty(
+        name="Ghi chú cho AI", description="Ghi chú thêm đưa vào prompt; ngăn cách các ý bằng dấu chấm phẩy")
     bpy.types.Scene.lpk_poc_reference_mask = bpy.props.StringProperty(
         name="Mask tham chiếu", subtype="FILE_PATH", description="PNG mask đã duyệt của view đang chọn (đo PoC)")
 
 
 def unregister():
+    del bpy.types.Scene.lpk_plan_notes
     del bpy.types.Scene.lpk_poc_reference_mask
     del bpy.types.Scene.lpk_plan_asset_name
     for cls in reversed(classes):

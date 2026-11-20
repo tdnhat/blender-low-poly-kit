@@ -30,11 +30,17 @@ def format_views(views):
     return "\n".join(lines)
 
 
-def build_prompt(asset_name, schema_text, measurements, views=(), template=None):
+def format_notes(notes):
+    lines = [ln.strip() for ln in (notes or "").replace(";", "\n").splitlines() if ln.strip()]
+    return "\n".join(ln if ln.startswith("-") else f"- {ln}" for ln in lines) if lines else "- (không có)"
+
+
+def build_prompt(asset_name, schema_text, measurements, views=(), template=None, notes=""):
     template = load_template() if template is None else template
     return (template
             .replace("{{asset_name}}", asset_name)
             .replace("{{views}}", format_views(views))
+            .replace("{{notes}}", format_notes(notes))
             .replace("{{measurements}}", format_measurements(measurements))
             .replace("{{schema}}", schema_text.strip()))
 

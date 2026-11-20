@@ -56,6 +56,13 @@ class Contact(unittest.TestCase):
         text = prompt.build_error_prompt([("msg", "/parts/7/attachment", 10, 3)], "{}", rejected=False)
         self.assertIn("dựng được nhưng", text)
 
+    def test_notes(self):
+        text = prompt.build_prompt("PR_Boat", validate.schema_text(), [], [], notes="mạn cao 2.65 m; cabin ở mũi")
+        self.assertIn("- mạn cao 2.65 m\n- cabin ở mũi", text)
+        self.assertIn("- (không có)", prompt.build_prompt("PR_Boat", validate.schema_text(), [], []))
+        for needle in ("hull", '"top"'):
+            self.assertIn(needle, text)
+
     def test_prompt_explains_surface_frame(self):
         text = prompt.build_prompt("PR_Tuna", validate.schema_text(), [], [])
         self.assertIn("tâm đáy", text)

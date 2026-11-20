@@ -173,7 +173,7 @@ def _quad_or_tris(verts, quad, eps=1e-9):
     return [(quad[0], quad[1], quad[3]), (quad[1], quad[2], quad[3])]
 
 
-def sectioned_body(plane, profile, depth, caps, thickness_profile, section):
+def sectioned_body(plane, profile, depth, caps, thickness_profile, section, chine_height=0.45, bottom_ratio=0.4):
     """Loft of cross-sections along the profile's first coordinate.
 
     The side silhouette follows ``profile`` (monotone along its first
@@ -199,6 +199,13 @@ def sectioned_body(plane, profile, depth, caps, thickness_profile, section):
         mid = (lo + hi) / 2.0
         if section == "diamond":
             pts = [(a, hi, 0.0), (a, mid, h), (a, lo, 0.0), (a, mid, -h)]
+        elif section == "hull":
+            chine = lo + (hi - lo) * chine_height
+            if bottom_ratio > 0:
+                pts = [(a, hi, h), (a, chine, h), (a, lo, h * bottom_ratio),
+                       (a, lo, -h * bottom_ratio), (a, chine, -h), (a, hi, -h)]
+            else:
+                pts = [(a, hi, h), (a, chine, h), (a, lo, 0.0), (a, chine, -h), (a, hi, -h)]
         else:
             pts = [(a, hi, h * HEX_TOP), (a, mid, h), (a, lo, h * HEX_TOP),
                    (a, lo, -h * HEX_TOP), (a, mid, -h), (a, hi, -h * HEX_TOP)]
@@ -310,13 +317,21 @@ def ray_hit(geom, origin, direction):
     return best
 
 
-def body_surface_frame(parent_geom, plane, a, b, side, normal_offset):
-    """Frame on the body surface hit by a ray from the mid-plane point (a, b)
-    along the extrude axis. +Z = surface normal, +X = along the body's first
-    profile axis projected on the surface."""
-    axis = extrude_axis(plane)
-    direction = axis if side == "+" else vm.mul(axis, -1.0)
-    origin = profile_point_3d(plane, (a, b), 0.0)
+def body_surface_frame(parent_geom, plane, a, b, side, normal_offset, s=0.0):
+    """Frame on the body surface hit by a ray from the point (a, b) (lateral
+    ``s`` for top/bottom). side +/- casts along the extrude axis (sides),
+    top/bottom along the second profile axis (deck / underside).
+    +Z = surface normal, +X = along the body's first profile axis projected
+    on the surface."""
+    if side in ("+", "-"):
+        axis = extrude_axis(plane)
+        origin = profile_point_3d(plane, (a, b), 0.0)
+    else:
+        axis = [0.0, 0.0, 0.0]
+        axis[PLANES[plane][1]] = 1.0
+        axis = tuple(axis)
+        origin = profile_point_3d(plane, (a, b), s)
+    direction = axis if side in ("+", "top") else vm.mul(axis, -1.0)
     hit = ray_hit(parent_geom, origin, direction)
     if hit is None:
         raise ValueError(f"body_surface: no surface at ({a}, {b})")
@@ -359,7 +374,8 @@ def build(part, computed=None):
         section = part.get("section", "box")
         if section != "box":
             return sectioned_body(part["plane"], part["profile"], part.get("depth"), part["caps"],
-                                  part.get("thickness_profile"), section)
+                                  part.get("thickness_profile"), section,
+                                  part.get("chine_height", 0.45), part.get("bottom_ratio", 0.4))
         return extrude(part["plane"], part["profile"], part.get("depth"), part["caps"], part.get("thickness_profile"))
     if op == "add_primitive" and part["shape"] == "box":
         return box(part["size"])

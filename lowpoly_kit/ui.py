@@ -183,6 +183,7 @@ class LPK_PT_buildplan(_Panel, bpy.types.Panel):
         root = adapters.get_root_object(context) if context.active_object else None
         if root is None:
             layout.prop(scene, "lpk_plan_asset_name")
+        layout.prop(scene, "lpk_plan_notes", text="Ghi chú")
         col = layout.column(align=True)
         col.operator("lpk.plan_copy_prompt", icon="COPYDOWN")
         col.operator("lpk.plan_paste", icon="PASTEDOWN")

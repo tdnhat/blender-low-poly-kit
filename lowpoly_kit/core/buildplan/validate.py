@@ -139,6 +139,8 @@ def _semantic(plan, col, mode):
                 col.add("plan_profile_degenerate", {"id": p["id"]}, ptr + "/profile")
             elif geometry2d.self_intersects(prof):
                 col.add("plan_profile_self_intersect", {"id": p["id"]}, ptr + "/profile")
+            elif p.get("section", "box") != "hull" and ("chine_height" in p or "bottom_ratio" in p):
+                col.add("plan_hull_params", {"id": p["id"]}, ptr + "/section")
             elif p.get("section", "box") != "box" and geometry2d.monotone_chains(prof) is None:
                 col.add("plan_section_not_monotone", {"id": p["id"], "section": p["section"]}, ptr + "/profile")
 
@@ -190,6 +192,17 @@ def _semantic(plan, col, mode):
             if not geometry2d.point_in_polygon((att["a"], att["b"]), [tuple(q) for q in parent["profile"]]):
                 col.add("plan_surface_point_outside", {"id": p["id"], "a": att["a"], "b": att["b"], "parent": parent["id"]},
                         ptr + "/a")
+            elif att["side"] in ("top", "bottom") and "s" in att:
+                if "thickness_profile" in parent:
+                    pts = sorted((float(q[0]), float(q[1])) for q in parent["thickness_profile"])
+                    a = min(max(att["a"], pts[0][0]), pts[-1][0])
+                    half = next(t0 + (t1 - t0) * ((a - p0) / (p1 - p0) if p1 > p0 else 0.0)
+                                for (p0, t0), (p1, t1) in zip(pts, pts[1:]) if p0 <= a <= p1) / 2.0
+                else:
+                    half = parent.get("depth", 0) / 2.0
+                if abs(att["s"]) >= half:
+                    col.add("plan_surface_lateral_outside", {"id": p["id"], "s": att["s"], "half": round(half, 4),
+                                                             "parent": parent["id"]}, ptr + "/s")
         elif rule == "box_face":
             if not (parent["op"] == "add_primitive" and parent.get("shape") == "box"):
                 col.add("plan_rule_parent_type", {"id": p["id"], "rule": rule, "expected": "add_primitive box",
