@@ -185,8 +185,13 @@ class LPK_OT_plan_copy_prompt(bpy.types.Operator):
         rows = [(m.view, m.dimension, m.meters) for m in ms]
         views = [(e[reference.VIEW_PROP], bool(reference.read_data(e).get("cal")))
                  for e in reference.ref_empties(context.scene)]
-        context.window_manager.clipboard = core_prompt.build_prompt(asset_name, core_validate.schema_text(), rows, views,
-                                                                    notes=context.scene.lpk_plan_notes)
+        scene = context.scene
+        if scene.lpk_prompt_mode == "SKILL":
+            text = core_prompt.build_skill_prompt(asset_name, rows, views, notes=scene.lpk_plan_notes,
+                                                  review=scene.lpk_prompt_review)
+        else:
+            text = core_prompt.build_prompt(asset_name, core_validate.schema_text(), rows, views, notes=scene.lpk_plan_notes)
+        context.window_manager.clipboard = text
         missing = [v for v, ok in views if not ok]
         msg = f"Đã chép prompt cho {asset_name} ({len(rows)} số đo). Nhớ đính kèm ảnh: {', '.join(v for v, _ in views) or 'các ảnh ortho'}"
         if missing:
@@ -481,6 +486,13 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.lpk_plan_asset_name = bpy.props.StringProperty(
         name="Tên asset", description="Tên asset cho Copy Prompt khi chưa có root")
+    bpy.types.Scene.lpk_prompt_mode = bpy.props.EnumProperty(
+        name="Kiểu prompt",
+        items=[("FULL", "Đầy đủ", "Prompt kèm toàn bộ quy ước và schema (dùng với chatbot thường)"),
+               ("SKILL", "Dùng skill", "Prompt ngắn cho chatbot đã cài skill lowpoly-build-plan")],
+        default="FULL")
+    bpy.types.Scene.lpk_prompt_review = bpy.props.BoolProperty(
+        name="Duyệt danh sách bộ phận trước", description="Yêu cầu AI liệt kê bộ phận và chờ xác nhận trước khi viết JSON")
     bpy.types.Scene.lpk_plan_notes = bpy.props.StringProperty(
         name="Ghi chú cho AI", description="Ghi chú thêm đưa vào prompt; ngăn cách các ý bằng dấu chấm phẩy")
     bpy.types.Scene.lpk_poc_reference_mask = bpy.props.StringProperty(
@@ -488,6 +500,8 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.lpk_prompt_review
+    del bpy.types.Scene.lpk_prompt_mode
     del bpy.types.Scene.lpk_plan_notes
     del bpy.types.Scene.lpk_poc_reference_mask
     del bpy.types.Scene.lpk_plan_asset_name

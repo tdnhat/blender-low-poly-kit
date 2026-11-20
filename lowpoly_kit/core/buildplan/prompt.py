@@ -4,8 +4,11 @@ import os
 
 from .. import messages
 
-TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                             "prompts", "buildplan_prompt_v1.md")
+PROMPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "prompts")
+TEMPLATE_PATH = os.path.join(PROMPTS_DIR, "buildplan_prompt_v1.md")
+SKILL_TEMPLATE_PATH = os.path.join(PROMPTS_DIR, "buildplan_prompt_skill.md")
+REVIEW_STEP = ("\n## Duyệt trước\n\nTrước khi viết JSON, liệt kê các bộ phận (id, op, quy tắc gắn, kích thước chính, "
+               "chi tiết inferred) và chờ tôi xác nhận.")
 
 
 def load_template():
@@ -43,6 +46,18 @@ def build_prompt(asset_name, schema_text, measurements, views=(), template=None,
             .replace("{{notes}}", format_notes(notes))
             .replace("{{measurements}}", format_measurements(measurements))
             .replace("{{schema}}", schema_text.strip()))
+
+
+def build_skill_prompt(asset_name, measurements, views=(), notes="", review=False):
+    """Short prompt for use with the lowpoly-build-plan skill (rules live in the skill)."""
+    with open(SKILL_TEMPLATE_PATH, encoding="utf-8") as f:
+        template = f.read()
+    return (template
+            .replace("{{asset_name}}", asset_name)
+            .replace("{{views}}", format_views(views))
+            .replace("{{measurements}}", format_measurements(measurements))
+            .replace("{{notes}}", format_notes(notes))
+            .replace("{{review}}", REVIEW_STEP if review else "")).rstrip() + "\n"
 
 
 def build_error_prompt(errors, plan_text=None, rejected=True):

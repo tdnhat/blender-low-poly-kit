@@ -31,7 +31,7 @@ Quy tắc:
 - `core/` chỉ dùng thư viện chuẩn và import nội bộ `core`.
 - Code phải chạy trên Python 3.11 (Python của Blender 4.2).
 
-Hướng dẫn sử dụng: [docs/huong-dan.md](docs/huong-dan.md). Checklist Godot: [docs/qa/godot-checklist.md](docs/qa/godot-checklist.md).
+Hướng dẫn sử dụng: [docs/huong-dan.md](docs/huong-dan.md). Skill AI cho Build Plan: [docs/ai-skill.md](docs/ai-skill.md) (`python3 tools/build_ai_skill.py`). Checklist Godot: [docs/qa/godot-checklist.md](docs/qa/godot-checklist.md).
 
 ## Trạng thái
 
