@@ -196,6 +196,102 @@ class LPK_OT_plan_clear_registry(bpy.types.Operator):
         return {"FINISHED"}
 
 
+def render_mask(context, root, empty, filepath):
+    """Render the asset silhouette for a calibrated reference view (Workbench,
+    transparent film, no anti-aliasing) into ``filepath``. The user's scene
+    and objects are not modified: copies are rendered in a temporary scene."""
+    from mathutils import Matrix
+
+    from .core import reference as core_ref
+    from .core import scope as core_scope
+
+    geom = reference.image_geom(empty)
+    if geom is None:
+        raise ValueError(messages.text("ref_image_not_loaded", {"name": empty.name}))
+    lw, lh = core_ref.local_size(geom)
+    cx, cy = core_ref.uv_to_local(geom, (0.5, 0.5))
+
+    nodes = adapters.scene_index(context)
+    scope = core_scope.collect(nodes, root.name)
+    tmp = bpy.data.scenes.new("LPK_MASK_TMP")
+    cam_data = bpy.data.cameras.new("LPK_MASK_CAM")
+    cam = bpy.data.objects.new("LPK_MASK_CAM", cam_data)
+    copies = []
+    try:
+        for key in scope.meshes:
+            src = bpy.data.objects[key]
+            copy = src.copy()
+            copy.parent = None
+            copy.matrix_world = src.matrix_world.copy()
+            copy.hide_render = False
+            tmp.collection.objects.link(copy)
+            copies.append(copy)
+        cam_data.type = "ORTHO"
+        cam_data.ortho_scale = max(lw, lh)
+        cam_data.sensor_fit = "AUTO"
+        cam_data.clip_start = 0.01
+        cam_data.clip_end = 1000.0
+        tmp.collection.objects.link(cam)
+        cam.matrix_world = empty.matrix_world @ Matrix.Translation((cx, cy, 100.0))
+        tmp.camera = cam
+        r = tmp.render
+        r.engine = "BLENDER_WORKBENCH"
+        r.resolution_x, r.resolution_y = geom.width_px, geom.height_px
+        r.resolution_percentage = 100
+        r.pixel_aspect_x = r.pixel_aspect_y = 1.0
+        r.film_transparent = True
+        r.image_settings.file_format = "PNG"
+        r.image_settings.color_mode = "RGBA"
+        r.filepath = filepath
+        tmp.display.render_aa = "OFF"
+        tmp.display.shading.light = "FLAT"
+        tmp.display.shading.color_type = "SINGLE"
+        bpy.ops.render.render(write_still=True, scene=tmp.name)
+    finally:
+        for copy in copies:
+            bpy.data.objects.remove(copy, do_unlink=True)
+        bpy.data.objects.remove(cam, do_unlink=True)
+        bpy.data.cameras.remove(cam_data)
+        bpy.data.scenes.remove(tmp)
+    return filepath
+
+
+class LPK_OT_plan_render_mask(bpy.types.Operator):
+    bl_idname = "lpk.plan_render_mask"
+    bl_label = "Render mask"
+    bl_description = "Render silhouette của asset theo view tham chiếu đang chọn và đo sai số đường bao"
+
+    def execute(self, context):
+        import os
+        import tempfile
+
+        from .core import metrics, png
+
+        root = adapters.get_root_object(context) if context.active_object else None
+        empty = bpy.data.objects.get(context.scene.lpk_ref_target)
+        if root is None or empty is None or not empty.get(reference.VIEW_PROP):
+            self.report({"WARNING"}, "Chọn asset root và ảnh tham chiếu đã căn scale")
+            return {"CANCELLED"}
+        view = empty[reference.VIEW_PROP]
+        folder = bpy.path.abspath("//poc") if bpy.data.filepath else tempfile.gettempdir()
+        os.makedirs(folder, exist_ok=True)
+        out = os.path.join(folder, f"{root.name}_{view}_mask.png")
+        try:
+            render_mask(context, root, empty, out)
+        except (ValueError, RuntimeError) as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
+        ref_path = bpy.path.abspath(context.scene.lpk_poc_reference_mask)
+        if ref_path and os.path.isfile(ref_path):
+            _w, _h, ref_rows = png.read_file(ref_path)
+            _w2, _h2, model_rows = png.read_file(out)
+            err = metrics.outline_error(png.mask(ref_rows), png.mask(model_rows, use_alpha=True))
+            self.report({"INFO"}, f"{view}: sai số đường bao {err * 100:.2f}% · mask: {out}")
+        else:
+            self.report({"INFO"}, f"Đã render mask: {out}")
+        return {"FINISHED"}
+
+
 class LPK_PT_plan_text(bpy.types.Panel):
     bl_idname = "LPK_PT_plan_text"
     bl_label = "LowPoly Kit"
@@ -211,7 +307,7 @@ class LPK_PT_plan_text(bpy.types.Panel):
 
 
 classes = (LPK_OT_plan_paste, LPK_OT_plan_rebuild, LPK_OT_plan_open, LPK_OT_plan_bake, LPK_OT_plan_copy_prompt,
-           LPK_OT_plan_clear_registry, LPK_PT_plan_text)
+           LPK_OT_plan_clear_registry, LPK_OT_plan_render_mask, LPK_PT_plan_text)
 
 
 def register():
@@ -219,9 +315,12 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.lpk_plan_asset_name = bpy.props.StringProperty(
         name="Tên asset", description="Tên asset cho Copy Prompt khi chưa có root")
+    bpy.types.Scene.lpk_poc_reference_mask = bpy.props.StringProperty(
+        name="Mask tham chiếu", subtype="FILE_PATH", description="PNG mask đã duyệt của view đang chọn (đo PoC)")
 
 
 def unregister():
+    del bpy.types.Scene.lpk_poc_reference_mask
     del bpy.types.Scene.lpk_plan_asset_name
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
