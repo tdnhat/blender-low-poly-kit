@@ -140,3 +140,19 @@ def chain_value(chain, a, pick=min):
     if not values:
         raise ValueError("outside chain")
     return pick(values)
+
+
+def point_in_polygon(p, points):
+    """Even-odd test; points on the outline count as outside."""
+    x, y = p
+    inside = False
+    n = len(points)
+    for i in range(n):
+        (x1, y1), (x2, y2) = points[i], points[(i + 1) % n]
+        if (y1 > y) != (y2 > y):
+            xc = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
+            if abs(xc - x) < 1e-12:
+                return False
+            if xc > x:
+                inside = not inside
+    return inside

@@ -157,6 +157,22 @@ def extrude(plane, profile, depth, caps, thickness_profile=None):
 HEX_TOP = 0.5  # hexagon: half-width at top/bottom relative to mid-height
 
 
+def _quad_or_tris(verts, quad, eps=1e-9):
+    """Keep a planar quad; split a non-planar one along its shorter diagonal.
+
+    Mirror-image quads have equal diagonal lengths, so the split stays
+    symmetric across the body (and does not depend on how a later
+    triangulation would pick the diagonal).
+    """
+    a, b, c, d = (verts[i] for i in quad)
+    n = vm.cross(vm.sub(b, a), vm.sub(c, a))
+    if vm.length(n) < 1e-15 or abs(vm.dot(vm.normalize(n), vm.sub(d, a))) <= eps:
+        return [quad]
+    if vm.distance(a, c) <= vm.distance(b, d):
+        return [(quad[0], quad[1], quad[2]), (quad[0], quad[2], quad[3])]
+    return [(quad[0], quad[1], quad[3]), (quad[1], quad[2], quad[3])]
+
+
 def sectioned_body(plane, profile, depth, caps, thickness_profile, section):
     """Loft of cross-sections along the profile's first coordinate.
 
@@ -200,7 +216,8 @@ def sectioned_body(plane, profile, depth, caps, thickness_profile, section):
             faces += [(r0[i], r0[(i + 1) % len(r0)], r1[0]) for i in range(len(r0))]
         else:
             m = len(r0)
-            faces += [(r0[i], r0[(i + 1) % m], r1[(i + 1) % m], r1[i]) for i in range(m)]
+            for i in range(m):
+                faces += _quad_or_tris(verts, (r0[i], r0[(i + 1) % m], r1[(i + 1) % m], r1[i]))
     if caps == "both":
         # Caps traverse each end ring opposite to the side faces sharing it.
         for ring in (list(reversed(rings[0])), rings[-1]):
@@ -265,6 +282,58 @@ def mirror_x(geom):
     verts = [(-x, y, z) for x, y, z in geom.verts]
     faces = [tuple(reversed(f)) for f in geom.faces]
     return MeshGeom(verts, faces)
+
+
+def ray_hit(geom, origin, direction):
+    """Nearest hit of a ray with the mesh: (distance, unit face normal) or None."""
+    best = None
+    for f in geom.faces:
+        a = geom.verts[f[0]]
+        for k in range(1, len(f) - 1):
+            b, c = geom.verts[f[k]], geom.verts[f[k + 1]]
+            e1, e2 = vm.sub(b, a), vm.sub(c, a)
+            pv = vm.cross(direction, e2)
+            det = vm.dot(e1, pv)
+            if abs(det) < 1e-14:
+                continue
+            tv = vm.sub(origin, a)
+            u = vm.dot(tv, pv) / det
+            if u < -1e-9 or u > 1 + 1e-9:
+                continue
+            qv = vm.cross(tv, e1)
+            v = vm.dot(direction, qv) / det
+            if v < -1e-9 or u + v > 1 + 1e-9:
+                continue
+            dist = vm.dot(e2, qv) / det
+            if dist > 1e-9 and (best is None or dist < best[0]):
+                best = (dist, vm.normalize(vm.cross(e1, e2)))
+    return best
+
+
+def body_surface_frame(parent_geom, plane, a, b, side, normal_offset):
+    """Frame on the body surface hit by a ray from the mid-plane point (a, b)
+    along the extrude axis. +Z = surface normal, +X = along the body's first
+    profile axis projected on the surface."""
+    axis = extrude_axis(plane)
+    direction = axis if side == "+" else vm.mul(axis, -1.0)
+    origin = profile_point_3d(plane, (a, b), 0.0)
+    hit = ray_hit(parent_geom, origin, direction)
+    if hit is None:
+        raise ValueError(f"body_surface: no surface at ({a}, {b})")
+    dist, normal = hit
+    if vm.dot(normal, direction) < 0:
+        normal = vm.mul(normal, -1.0)
+    point = vm.add(origin, vm.mul(direction, dist))
+    first = [0.0, 0.0, 0.0]
+    first[PLANES[plane][0]] = 1.0
+    x_axis = vm.sub(first, vm.mul(normal, vm.dot(first, normal)))
+    if vm.length(x_axis) < 1e-6:
+        second = [0.0, 0.0, 0.0]
+        second[PLANES[plane][1]] = 1.0
+        x_axis = vm.sub(second, vm.mul(normal, vm.dot(second, normal)))
+    x_axis = vm.normalize(x_axis)
+    y_axis = vm.cross(normal, x_axis)
+    return vm.from_axes(x_axis, y_axis, normal, vm.add(point, vm.mul(normal, normal_offset)))
 
 
 def lathe_radius_at(profile, z):

@@ -55,6 +55,6 @@ Panel **Build Plan (PoC)** (đóng mặc định):
 
 Thân thon (cá, chim, tàu): `extrude_profile` với `thickness_profile` lấy bề dày từ ảnh Top, thêm `"section": "diamond"` hoặc `"hexagon"` để mặt cắt ngang phình ở giữa. Bộ phận hai bên: khai báo bên phải với `"mirror": "X"`, add-on tự sinh bên trái (`<id>_mirror`); muốn chỉnh thì chỉnh part gốc.
 
-Quy tắc gắn: `lathe_radius_at_height` (đai quanh khối tiện), `profile_segment` (lên mặt khối đùn), `box_face` (lên mặt hộp: chân ghế, tựa lưng), `offset` (vị trí, góc tự do trong hệ của cha).
+Quy tắc gắn: `lathe_radius_at_height` (đai quanh khối tiện), `profile_segment` (lên mặt khối đùn), `box_face` (lên mặt hộp: chân ghế, tựa lưng), `body_surface` (chạm đúng mặt thân cong: mắt, vây ngực), `offset` (vị trí, góc tự do trong hệ của cha).
 
-Ví dụ plan: `tests/fixtures/plans/barrel.json`, `terminal.json`, `chair.json`.
+Ví dụ plan: `tests/fixtures/plans/barrel.json`, `terminal.json`, `chair.json`, `tuna.json`.

@@ -325,6 +325,9 @@
         },
         {
           "$ref": "#/$defs/offset"
+        },
+        {
+          "$ref": "#/$defs/body_surface"
         }
       ]
     },
@@ -472,6 +475,52 @@
         "X"
       ],
       "description": "Also build a copy mirrored across the root's YZ plane (x -> -x)."
+    },
+    "body_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_id",
+        "rule",
+        "a",
+        "b",
+        "side",
+        "normal_offset",
+        "align"
+      ],
+      "properties": {
+        "parent_id": {
+          "$ref": "#/$defs/id"
+        },
+        "rule": {
+          "const": "body_surface"
+        },
+        "a": {
+          "type": "number",
+          "description": "First profile coordinate (along the body, e.g. y for plane YZ)."
+        },
+        "b": {
+          "type": "number",
+          "description": "Second profile coordinate (height, e.g. z for plane YZ)."
+        },
+        "side": {
+          "enum": [
+            "+",
+            "-"
+          ],
+          "description": "Which side along the extrude axis (+X for plane YZ)."
+        },
+        "normal_offset": {
+          "type": "number"
+        },
+        "align": {
+          "const": "surface"
+        },
+        "rotation": {
+          "$ref": "#/$defs/vec3",
+          "description": "Extra Euler XYZ degrees in the surface frame (Z = surface normal, X = along the body)."
+        }
+      }
     }
   }
 }

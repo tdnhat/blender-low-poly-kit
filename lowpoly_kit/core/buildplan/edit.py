@@ -15,6 +15,7 @@ ATTACH_FIELDS = {
     "profile_segment": ("segment", "t", "normal_offset"),
     "box_face": ("face", "u", "v", "normal_offset"),
     "offset": ("position", "rotation"),
+    "body_surface": ("a", "b", "side", "normal_offset", "rotation"),
 }
 
 

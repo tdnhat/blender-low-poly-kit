@@ -242,6 +242,9 @@ class LPK_OT_plan_edit_part(bpy.types.Operator):
     att_v: bpy.props.FloatProperty(name="v", min=0.0, max=1.0)
     att_position: bpy.props.FloatVectorProperty(name="Vị trí", size=3, unit="LENGTH")
     att_rotation: bpy.props.FloatVectorProperty(name="Góc (độ)", size=3)
+    att_a: bpy.props.FloatProperty(name="Vị trí dọc thân (a)", unit="LENGTH")
+    att_b: bpy.props.FloatProperty(name="Độ cao (b)", unit="LENGTH")
+    att_side: bpy.props.EnumProperty(name="Phía", items=[("+", "+", "Phía dương trục đùn"), ("-", "−", "Phía âm trục đùn")])
 
     _fields = ()
     _att_fields = ()
@@ -284,7 +287,8 @@ class LPK_OT_plan_edit_part(bpy.types.Operator):
                 continue
             setattr(self, f, str(value) if f == "segments" else value)
         for f in att_fields:
-            setattr(self, "att_" + f, part["attachment"][f])
+            if f in part["attachment"]:
+                setattr(self, "att_" + f, part["attachment"][f])
         self.radius_scale = self.height_scale = 1.0
         self.profile_scale = (1.0, 1.0)
         return context.window_manager.invoke_props_dialog(self, width=360)

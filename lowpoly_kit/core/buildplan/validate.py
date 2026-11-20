@@ -182,6 +182,14 @@ def _semantic(plan, col, mode):
             if att["segment"] >= n:
                 col.add("plan_segment_range", {"id": p["id"], "segment": att["segment"], "parent": parent["id"], "max": n - 1},
                         ptr + "/segment")
+        elif rule == "body_surface":
+            if parent["op"] != "extrude_profile":
+                col.add("plan_rule_parent_type", {"id": p["id"], "rule": rule, "expected": "extrude_profile",
+                                                  "parent": parent["id"], "actual": parent["op"]}, ptr + "/parent_id")
+                continue
+            if not geometry2d.point_in_polygon((att["a"], att["b"]), [tuple(q) for q in parent["profile"]]):
+                col.add("plan_surface_point_outside", {"id": p["id"], "a": att["a"], "b": att["b"], "parent": parent["id"]},
+                        ptr + "/a")
         elif rule == "box_face":
             if not (parent["op"] == "add_primitive" and parent.get("shape") == "box"):
                 col.add("plan_rule_parent_type", {"id": p["id"], "rule": rule, "expected": "add_primitive box",

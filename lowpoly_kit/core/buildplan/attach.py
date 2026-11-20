@@ -84,6 +84,13 @@ def attach_matrix(child, parent_eff, parent_computed):
     if rule == "box_face":
         frame = geometry.box_face_frame(parent_eff["size"], att["face"], att["u"], att["v"], att["normal_offset"])
         return frame, {}
+    if rule == "body_surface":
+        parent_geom = geometry.build(parent_eff, parent_computed)
+        frame = geometry.body_surface_frame(parent_geom, parent_eff["plane"], att["a"], att["b"], att["side"],
+                                            att["normal_offset"])
+        if att.get("rotation"):
+            frame = vm.matmul(frame, vm.euler_xyz(att["rotation"]))
+        return frame, {}
     if rule == "offset":
         local = vm.matmul(vm.translation(att["position"]), vm.euler_xyz(att["rotation"]))
         return local, {}
