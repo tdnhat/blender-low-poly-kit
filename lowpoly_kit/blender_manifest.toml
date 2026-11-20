@@ -1,0 +1,24 @@
+schema_version = "1.0.0"
+
+id = "lowpoly_kit"
+version = "0.1.0"
+name = "LowPoly Kit"
+tagline = "Reference setup, checker and Godot export for low-poly props"
+maintainer = "LowPoly Kit team"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+
+tags = ["Modeling", "Import-Export", "Game Engine"]
+
+[permissions]
+files = "Load reference images and team config, export glTF files"
+
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+  "*.pyc",
+  "/.git/",
+]

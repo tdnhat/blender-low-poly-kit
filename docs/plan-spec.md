@@ -101,7 +101,7 @@ JSON chứa đủ dữ liệu hình học để bộ dựng có thể tạo mesh
 | --- | --- | --- |
 | `add_primitive` | `shape` (`box` / `cylinder`), `size` hoặc `radius` + `height`, `segments` | Gốc local ở tâm đáy, trục cao là +Z local. |
 | `lathe_profile` | `profile_z_radius`, `segments`, `caps` | Xoay quanh trục Z local. Profile là các cặp `[độ cao, bán kính]` tính từ đáy, độ cao tăng dần. `caps` là `"both"`, `"top"`, `"bottom"` hoặc `"none"`. |
-| `extrude_profile` | `plane`, `profile`, `depth`, `caps` | `plane` là `"YZ"` (mặt cắt nhìn từ Right, đùn theo X), `"XZ"` (nhìn từ Front, đùn theo Y) hoặc `"XY"` (nhìn từ Top, đùn theo Z). Profile là đa giác kín, điểm theo chiều ngược kim đồng hồ khi nhìn từ hướng dương của trục đùn, không tự cắt. Đùn đối xứng hai phía mặt phẳng gốc. |
+| `extrude_profile` | `plane`, `profile`, `depth`, `caps` | `plane` là `"YZ"` (mặt cắt nhìn từ Right, đùn theo X), `"XZ"` (nhìn từ Front, đùn theo Y) hoặc `"XY"` (nhìn từ Top, đùn theo Z). Profile là đa giác kín, không tự cắt; mỗi điểm là cặp tọa độ theo thứ tự chữ của plane (`[y, z]`, `[x, z]` hoặc `[x, y]`). Chiều quay của điểm không bắt buộc: bộ dựng suy ra hướng ngoài từ diện tích có dấu và không đảo thứ tự điểm, nên chỉ số `segment` giữ nguyên. Đùn đối xứng hai phía mặt phẳng gốc. |
 
 - `segments` của khối tròn thuộc tập {4, 8, 12, 16}.
 - Góc pha: tâm một mặt nằm trên −Y local, tức hướng Front. Vì số cạnh chia hết cho 4, view Right cũng nhìn thẳng vào một mặt, và các khối tròn cùng số cạnh có mặt thẳng hàng.
@@ -243,6 +243,25 @@ Ví dụ rút gọn với hai phần của `PR_Terminal`. Thân là mặt cắt 
 | Nhân bản một part, đổi tên bản gốc rồi đặt tên cũ cho bản sao | Rebuild vẫn nhận đúng bản gốc qua tham chiếu trong phiên. Khi bỏ tham chiếu để mô phỏng trường hợp mơ hồ, rebuild báo các object trùng ID và dừng trước khi sửa cả hai. |
 
 - Tài liệu kỹ thuật tham khảo cho export và tối ưu mesh: [Blender 4.2 — glTF 2.0](https://docs.blender.org/manual/en/4.2/addons/import_export/scene_gltf2.html) · [Blender 4.2 — Decimate Modifier](https://docs.blender.org/manual/en/4.2/modeling/modifiers/generate/decimate.html) · [Godot — Available 3D formats](https://docs.godotengine.org/en/stable/tutorials/assets_pipeline/importing_3d_scenes/available_formats.html)
+
+## Giả định triển khai
+
+Các điểm spec chưa chốt được triển khai theo mặc định dưới đây. Lead có thể đổi; phần lớn chỉnh được trong `team_config.json`.
+
+| Chủ đề | Mặc định |
+| --- | --- |
+| Profile đùn | Cặp tọa độ theo thứ tự chữ của plane, chiều quay tự do (xem Quy ước hình học). `caps` của extrude là `"both"` hoặc `"none"`; mặt cap được chia tam giác. |
+| Lathe | Độ cao tăng ngặt. Điểm có bán kính 0 thu về một đỉnh. Khoảng chiều cao của phần gắn nằm ngoài profile cha là lỗi. |
+| Trường bắt buộc | `align` chỉ nhận `"surface"`. `align`, `radial_offset`, `normal_offset` bắt buộc trong schema v1. |
+| Bake | Transform của object đã bake cũng được đóng băng. Snapshot có dạng `{op, params, attachment, matrix_root}`. |
+| Part sinh ra | Parent phẳng dưới root. **Dán Plan** khi chưa có root thì tạo root từ `asset_name`; `asset_name` khác tên root là lỗi. Part `inferred` được đánh dấu bằng object color, không đụng attribute `Color`. Màu mặc định ghi vào `Color` là xám nhạt. |
+| Reference | Mốc gốc là click thứ ba, sau hai điểm căn scale. Khoảng cách đo theo trục đã chọn. Có thể dùng đồng thời Right và Left. |
+| Tìm root | Từ object đang chọn, lấy tổ tiên gần nhất (kể cả chính nó) là Empty có tên khớp quy ước. Không có thì lấy tổ tiên cao nhất để báo lỗi root. |
+| Team config | Thêm dung sai pivot, số material tối đa (1), tỷ lệ Warning (0.9), override severity. Quy ước tên là regex, palette là mã hex sRGB. Thiếu key dùng mặc định từng key; file không hợp lệ dùng mặc định cả file. |
+| Material | Hợp lệ khi Base Color của Principled BSDF nối trực tiếp từ node Color Attribute có `layer_name = "Color"`. Không bắt buộc tên `M_VertexColor`. Slot rỗng là Warning. "Giữ màu đã có" là quy đổi màu Base Color của material cũ và attribute POINT/FLOAT sang `Color` CORNER/BYTE. |
+| Normals, merge | Winding được kiểm mọi nơi; kiểm normal hướng vào trong chỉ với mesh kín manifold. Khoảng cách merge tính trong không gian local. |
+| Đo PoC | Mask theo kênh alpha, đường bao 4-láng giềng. Số thông số chỉnh là hợp các trường đổi giữa các lần dựng liên tiếp, không tính trường chuỗi và `inferred`. |
+| Prompt | Tiếng Việt; số đo lấy từ các mốc Reference đã xác nhận. |
 
 ## Việc cần chốt trước khi bắt đầu
 
