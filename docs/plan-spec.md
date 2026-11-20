@@ -1,222 +1,255 @@
-# LowPoly Kit – Plan & Spec
+# LowPoly Kit — Plan & Spec
 
 ## Tổng quan
 
-LowPoly Kit là add-on Blender giúp người mới trong team dựng asset low-poly đúng chuẩn, từ ảnh reference orthographic đến file `.glb` vào thẳng Godot.
+LowPoly Kit là Blender add-on giúp artist trong team dựng static prop low-poly từ ảnh orthographic, kiểm tra theo chuẩn chung và xuất `.glb` cho Godot. Build Plan là hướng tự động hóa của dự án: add-on đọc JSON mô tả hình học, dựng blockout theo từng bộ phận và đặt kết quả cạnh ảnh tham chiếu để artist duyệt.
 
-**Vấn đề cần giải quyết**
+Team có thể dùng luồng dựng tay ngay từ v0.1. PoC Build Plan dùng lại phần căn ảnh và có thể chạy song song với các phần còn lại của v0.1 khi đủ người.
 
-- Setup ảnh ref thủ công dễ sai: scale giữa các view lệch nhau, ảnh bị click nhầm hoặc dịch chuyển.
-- Người mới không biết dùng tool nào ở bước nào.
-- Lỗi kỹ thuật (scale chưa apply, n-gon, vertex trùng, origin sai, vượt budget) chỉ lộ ra khi đã vào engine.
-- Setting export và cách đặt tên mỗi người một kiểu.
-
-**Người dùng**
-
-- Artist mới (người dùng chính): cần được dẫn từng bước và biết mình sai ở đâu.
-- Artist có kinh nghiệm: cần tốc độ, tắt được tip.
-- Lead: đặt chuẩn một lần trong file config, cả team dùng chung.
-
-**Chuẩn kỹ thuật**
-
-| Hạng mục | Giá trị |
+| Người dùng | Nhu cầu |
 | --- | --- |
-| Engine | Godot 4, file `.glb` |
-| Loại asset | Nhân vật (CH), Prop (PR) |
-| Budget | 1.000–15.000 tris mỗi asset |
-| Tô màu | Vertex color, một material chung |
-| Đơn vị | 1 unit Blender = 1 mét Godot |
-| Blender | 4.2 LTS trở lên |
+| Artist mới | Biết phải làm gì ở từng bước, thấy lỗi và biết cách sửa. |
+| Artist có kinh nghiệm | Căn ảnh, kiểm tra và export nhanh, có thể tắt tip. |
+| Lead | Đặt quy ước naming, budget và palette một lần cho team. |
 
-**Ngoài phạm vi:** texture, UV unwrap, sculpt high-poly, rig và animation (xem lại nếu nhân vật cần rig).
+| Hạng mục | Thiết lập cho v0.1 |
+| --- | --- |
+| Blender và engine | Blender Extension từ 4.2 LTS. Kiểm thử trên bản Blender và Godot 4 mà team sử dụng. |
+| Asset | Static prop, tiền tố `PR_`, ví dụ `PR_Barrel_Broken`. |
+| Tỷ lệ | 1 đơn vị Blender tương ứng 1 mét trong Godot. |
+| Triangle budget | Cấu hình theo nhóm prop. Giá trị thử nghiệm đề xuất là 3.000 tris cho prop nhỏ, có thể cấp budget riêng cho prop lớn. Warning từ 90%, Error khi vượt ngưỡng đã chốt. Nhóm của asset lưu trong custom property `lpk_budget_group` trên root, chọn bằng dropdown ở panel; root chưa chọn nhóm nhận nhóm mặc định trong config. |
+| Màu | `Color` attribute theo góc face và một material vertex color chung cho các prop v0.1. |
+| Pivot | Root ở đáy giữa của asset theo local bounds. Bộ phận có thể có pivot riêng bằng origin của chính mesh, ví dụ đặt origin cánh tủ tại bản lề. Bản xuất giữ Empty gốc của asset và bỏ qua các Empty trung gian dùng làm pivot. |
+| Export | `<export_dir>/props/<tên asset>.glb`. |
+| Phạm vi tiếp theo | Nhân vật `CH_`, rig, animation, UV unwrap, texture và sculpt high-poly được xem xét riêng. |
 
-## Flow sử dụng
+## Luồng sử dụng trong v0.1
 
-Người dùng mở sidebar (phím N) → tab **LowPoly Kit** và đi lần lượt 5 panel từ trên xuống. Ví dụ dưới đây: một bạn mới dựng thùng gỗ `PR_Barrel` từ ảnh Front và Side.
+1. **Reference.** Chọn Front, Right hoặc Left, Back và Top tùy bộ ảnh. Chọn hướng nhìn, gốc căn và click hai điểm có khoảng cách thực đã biết trên mỗi ảnh, rồi nhập khoảng cách đó. Add-on đặt ảnh ở đúng hướng, căn scale và gom vào collection `REF`. Artist chỉnh opacity, khóa chọn và đổi nhanh giữa các view.
+2. **Dựng hình.** Tạo một Empty làm asset root, ví dụ `PR_Barrel`, chọn nhóm budget và dựng mesh bằng công cụ Blender. Parent thân thùng, đai và nắp vào root. Panel hiển thị tên asset, nhóm budget và tổng tris của các mesh sẽ xuất.
+3. **Tô màu.** Trong Edit Mode, chọn face và bấm một ô palette. Trong Object Mode, có thể tô toàn bộ object. Add-on tạo hoặc tái sử dụng attribute `Color` và material `M_VertexColor`.
+4. **Kiểm tra.** Chọn root hoặc một object con, bấm **Kiểm tra asset** để xem Error, Warning và Info của cả asset. Dùng **Chọn** để tới object hoặc vùng mesh có vấn đề. Dùng **Sửa** với lỗi có bản sửa được hỗ trợ.
+5. **Export Godot.** Add-on chạy lại checker với cùng tập object sẽ xuất, chặn khi còn Error rồi xuất một `.glb`. Artist có thể tiếp tục từ scene đang mở sau khi export.
 
-1. **Reference** (khoảng 1 phút)
-   - Người dùng: chọn ảnh Front/Side/Back/Top, nhập chiều cao thật (0,9 m), bấm Tạo Reference.
-   - Add-on: đặt ảnh đúng hướng, scale các view khớp nhau, đáy ảnh nằm trên mặt đất, khóa chọn, chỉ hiện ở view ortho tương ứng, gom vào collection `REF`. Có thanh opacity, nút ẩn/hiện và nút chuyển nhanh sang view Front/Side/Top.
-2. **Dựng hình** (phần việc chính)
-   - Người dùng: đặt tên asset, thêm primitive low-poly, dựng bằng tool có sẵn của Blender theo ảnh ref.
-   - Add-on: báo tên đúng/sai và nhận loại asset, hiện số tris so với budget, preset Mirror và flat shade, tip theo bước (tắt được). Từ v0.3 có thêm tự sinh blockout.
-3. **Tô màu**
-   - Người dùng: vào Edit Mode, chọn face, click một ô trong palette.
-   - Add-on: tự tạo color attribute và material `M_VertexColor`, ghi màu vào các face đang chọn. Palette lấy từ config chung của team.
-4. **Kiểm tra**
-   - Người dùng: bấm Kiểm tra model, xử lý danh sách lỗi.
-   - Add-on: liệt kê lỗi theo mức Error / Warning / Info. Nút **Sửa** cho lỗi sửa an toàn được, nút **Chọn** bôi sẵn vùng lỗi trong Edit Mode để người mới tự sửa và học. Rê chuột để xem lý do.
-5. **Export Godot**
-   - Người dùng: bấm Export.
-   - Add-on: chạy kiểm tra lại và chặn nếu còn Error, sau đó xuất `export/props/PR_Barrel.glb` với setting chuẩn cho Godot. Godot tự import, màu hiển thị đúng.
-
-Lead chỉ cần sửa `team_config.json` trên ổ chung (budget, palette, convention); lần mở Blender tiếp theo cả team nhận chuẩn mới.
-
-## Tính năng chi tiết
-
-Sáu module. Model Checker là module giá trị nhất vì nó thay người senior rà lỗi.
+## Tính năng v0.1
 
 ### Reference Setup
 
-- Nạp tối đa 4 ảnh: Front, Side (phải hoặc trái), Back, Top.
-- Scale theo chiều cao thật: chiều cao ảnh Front/Side/Back = chiều cao nhập vào; ảnh Top scale theo độ rộng ảnh Front.
-- Empty Image: hiển thị phía sau geometry, chỉ hiện khi nhìn thẳng trục, chỉ mặt trước, có alpha.
-- Điều khiển: opacity, khóa/mở chọn, ẩn/hiện, xóa ref, nút chuyển view.
-- Yêu cầu ảnh: cắt sát đỉnh và đáy vật thể; các view cùng tỷ lệ.
+- Lưu hướng nhìn, mốc gốc và tỷ lệ riêng cho từng view. Khoảng cách mốc có thể dựa vào chiều cao, bề rộng hoặc chiều sâu đã biết, tùy view. Ví dụ, dùng chiều cao thật ở Front và Right, dùng bề rộng thật ở Top nếu hai mốc tương ứng nhìn thấy rõ.
+- v0.1 chỉ đặt mốc tay: một modal operator nhận click trong view ortho và chiếu tọa độ lên mặt phẳng ảnh. Cách này hoạt động với mọi kiểu nền và padding. Đề xuất mốc tự động từ đường bao PNG để sau, dùng chung code tách đường bao với `measure.py` của Build Plan.
+- Sau khi căn scale, artist có thể đánh dấu thêm hai đầu của mỗi chiều cần đối chiếu. Add-on đo khoảng cách theo trục tương ứng trên ảnh đã căn, bỏ qua phần padding. So chiều cao giữa Front, Back và các view bên (Right/Left), bề rộng giữa Front, Back và Top, chiều sâu giữa các view bên và Top. Chỉ đối chiếu từng cặp view khi cùng một chiều có số đo ở cả hai view và ít nhất một số đo đến từ cặp mốc độc lập với cặp mốc căn scale. Hiển thị **Chưa đo** cho view và chiều còn thiếu mốc, đồng thời chỉ ra các cặp số đo có chênh lệch tuyệt đối vượt dung sai tính bằng mét.
+- Ảnh tham chiếu đặt sau geometry, hiển thị ở hướng nhìn tương ứng và có công tắc ẩn/hiện. Bộ ảnh dùng cho PoC cần là ảnh ortho của cùng một prop. Ảnh góc chéo có thể đi kèm để đọc cấu tạo.
 
-### Hỗ trợ dựng hình
+### Dựng hình và tô màu
 
-- Hiển thị tris (sau modifier) của object đang chọn, thanh tiến độ so với budget.
-- Primitive low-poly: cube, trụ 6/8 cạnh, cầu thấp.
-- Preset Mirror X (clipping, bisect), flat shade, bật X-ray và Face Orientation.
-- Tip ngắn cho từng bước, tắt được trong Preferences.
-
-### Tô vertex color
-
-- Tự tạo color attribute `Color` (theo góc face, 8-bit) và material chung `M_VertexColor`.
-- Palette của team đọc từ config, có thêm một ô màu tự do.
-- Tô các face đang chọn trong Edit Mode, hoặc cả object trong Object Mode.
+- Mỗi asset v0.1 dùng một Empty làm root. Toàn bộ hình học của asset nằm trên các mesh con. Root định danh asset, đặt pivot chung và xác định phạm vi checker/export. Cùng một bộ lọc chọn mesh được dùng để đếm tris, chạy checker và xuất file. Ảnh ref nằm ngoài phạm vi asset root.
+- Quy tắc của bộ lọc: lấy mọi object con (đệ quy) của root có kiểu Mesh. Mesh đang ẩn trong viewport vẫn được tính và xuất, kèm Info để artist biết. Object con không phải mesh (curve, text, empty khác root) bị bỏ qua khi xuất và báo Warning để artist convert sang mesh hoặc gỡ khỏi root.
+- Geometry gốc là nơi chọn face, cạnh hoặc vertex cần sửa. Triangle budget lấy trên mesh đã đánh giá với modifier tương ứng preset export.
+- `Color` dùng miền `CORNER`, kiểu `BYTE_COLOR` để các face chung vertex có thể mang màu riêng. Checker xác nhận material thực sự dùng attribute này ở Base Color theo preset glTF. Palette dùng chung cho team và có ô màu tự do.
 
 ### Model Checker
 
-Mức Error chặn export; Warning và Info chỉ nhắc. "Sửa tất cả" chỉ chạy các bản sửa đánh dấu an toàn.
+| Kiểm tra | Mức mặc định | Cách xử lý |
+| --- | --- | --- |
+| Root thiếu, sai kiểu hoặc tên sai quy ước | Error | Chỉ ra root cần sửa. Nếu một Mesh đang làm root, hướng dẫn tạo Empty và parent cả cây mesh vào đó trước khi export. |
+| Root có scale khác 1 hoặc có rotation | Error | Root phải có scale đơn vị và rotation bằng 0 trước khi chuẩn hóa vị trí cho bản xuất. Hướng dẫn chuyển transform xuống mesh con hoặc reset root. |
+| Tổng tris vượt hard budget | Error | Hiện tổng của asset và số tris từng mesh để tìm phần nặng. |
+| Tổng tris đạt 90% budget | Warning | Hiện số tris còn lại. |
+| Thiếu `Color` hoặc liên kết Base Color sai chuẩn | Error | Cung cấp thao tác khởi tạo hoặc sửa material riêng, giữ màu đã có khi cấu trúc cho phép. |
+| Pivot root lệch đáy giữa hoặc scene scale khác chuẩn | Warning | Chỉ rõ chênh lệch. Chỉnh pivot qua thao tác riêng và kiểm lại vị trí bộ phận. |
+| Scale hoặc rotation còn trên mesh | Warning | Nêu object và modifier liên quan. Apply là thao tác riêng sau khi xem ảnh hưởng lên geometry, hệ trục và object con. |
+| Mesh con có scale âm | Warning | Liệt kê object và các trục có scale âm. Khi kiểm tra thứ tự đỉnh của mặt trong glTF, xét dấu định thức của transform toàn cục, kể cả transform kế thừa từ cha. |
+| Object con không phải mesh, mesh con đang ẩn | Warning / Info | Theo quy tắc của bộ lọc asset ở trên. |
+| N-gon, vertex gần trùng, phần tử rời, mặt suy biến | Warning | Chọn vùng liên quan. Triangulate, merge, xóa hoặc dissolve chạy riêng khi phù hợp. |
+| Normals thiếu nhất quán, cạnh nhiều hơn hai mặt hoặc biên hở | Warning | Chọn vùng liên quan. Biên hở có thể có chủ ý, đánh giá normals theo kiểu mesh. |
+| Nhiều material hơn giới hạn | Warning | Liệt kê slot cần duyệt. Thay material là thao tác riêng. |
+| Smooth shading, tên mesh data lệch tên object, asset chỉ có một màu | Info | Cho phép chỉnh khi phù hợp. Asset một màu có thể là thiết kế chủ ý. |
 
-| Check | Mức | Sửa tự động | Chọn vùng lỗi |
-| --- | --- | --- | --- |
-| Tên sai convention / không rõ loại asset | Error | Không | – |
-| Vượt budget tris (sau modifier) | Error; Warning khi ≥ 90% | Không (v0.2: giảm về budget) | – |
-| Scale / rotation chưa apply | Error | Có (rotation bỏ qua nếu có Mirror) | – |
-| Thiếu color attribute hoặc material vertex color | Error | Có | – |
-| Origin không ở đáy-giữa | Warning | Có (giữ trục Mirror) | – |
-| N-gon (> 4 cạnh) | Warning | Có, chia tam giác (không nằm trong Sửa tất cả) | Có |
-| Vertex trùng | Warning | Có, merge theo khoảng cách | Có |
-| Vertex / cạnh thừa (loose) | Warning | Có, xóa | Có |
-| Normal không nhất quán hoặc lật ngược | Warning | Có, recalculate outside | Có |
-| Face diện tích bằng 0 | Warning | Có, dissolve | Có |
-| Cạnh dính hơn 2 face (non-manifold) | Warning | Không | Có |
-| Nhiều hơn 1 material | Warning | Có, thay bằng `M_VertexColor` | – |
-| Face đang smooth shading | Info | Có, flat shade | – |
-| Tên mesh data khác tên object | Info | Có, đổi tên | – |
-| Chưa tô màu (toàn một màu) | Info | Không | – |
+v0.1 không có nút **Sửa tất cả**: mỗi fix chạy riêng từ dòng lỗi của nó. Các thao tác đổi topology, màu, transform hay origin cần tác động rõ ràng và undo được. Cân nhắc thêm **Sửa tất cả** khi đã có đủ fix được kiểm thử là an toàn. Nếu geometry do modifier sinh ra gây lỗi, báo tên object hoặc modifier để artist biết nơi xử lý.
 
 ### Export Godot
 
-- Định dạng `.glb`, Y-up, apply modifier, kèm vertex color qua material.
-- Đưa object về gốc tọa độ khi export rồi trả lại vị trí cũ; xuất cả object con.
-- Đường dẫn: `<export_dir>/<characters|props>/<Tên object>.glb`; yêu cầu đã lưu file `.blend`.
-- Chạy Model Checker trước; còn Error thì từ chối và mở danh sách lỗi.
-- Cảnh báo nếu unit scale của scene khác 1.
+- Export binary glTF với preset Y-up, modifier và vertex color. Checker và exporter dùng cùng danh sách mesh từ asset root, gồm mesh ẩn trong viewport. Bản xuất đặt pivot của root tại `(0, 0, 0)` dù root nằm ở vị trí nào trong Blender. Khi bỏ qua một Empty hoặc object trung gian khác, gắn mesh vào tổ tiên gần nhất còn trong bản xuất và giữ transform của mesh so với root, gồm pivot riêng của nó. Loại các object ngoài asset. Phục hồi cả transform, quan hệ cha–con, visibility, selection và mode nếu có thay đổi tạm, kể cả khi exporter báo lỗi.
+- Chạy checker trước khi ghi. Chặn Error, trình bày Warning để artist duyệt và thông báo đường dẫn file khi thành công. Dùng file `.blend` đã lưu nếu `export_dir` là đường dẫn tương đối theo project.
+- Bài test Godot kiểm tra kích thước thực, trục hướng, pivot ở đáy và màu của hai mặt liền kề dùng cùng material. Dùng fixture có root đặt xa gốc Blender, mesh ẩn làm con của một Empty trung gian có transform và một prop khác nằm ngoài root. Đối chiếu danh sách mesh với checker, xác nhận file chứa mesh ẩn và loại Empty trung gian cùng prop ngoài root. Kiểm tra root ở gốc và mesh giữ vị trí, hướng, tỷ lệ và pivot tương đối sau khi đổi hệ trục.
 
 ### Team config
 
-- File `team_config.json`; đường dẫn chỉnh trong Preferences của add-on (trỏ ra ổ chung). Không có file thì dùng bản mặc định đi kèm.
-- Nội dung: loại asset (tiền tố, budget, thư mục export), regex tên, tên material và color attribute, số material tối đa, khoảng cách merge, thư mục export, palette màu.
-- Tự nạp lại khi file thay đổi; config lỗi thì báo trong Preferences và dùng mặc định.
+`team_config.json` chứa quy ước tên root, nhóm asset và budget, dung sai căn ảnh và khoảng cách merge, palette, material, color attribute và đường dẫn export. Lead có thể đặt file ở thư mục chung, mỗi máy chọn đường dẫn trong Preferences. Nạp lại khi mở Blender hoặc khi artist chọn **Reload Config**. Nếu file thiếu hoặc lỗi, báo lý do và ghi rõ bộ mặc định nào đang được dùng.
 
-## Tự động dựng mesh
+## PoC Build Plan
 
-Add-on tự động hóa phần blockout, không dựng hoàn chỉnh model. Ảnh ortho chỉ cho silhouette, không cho độ sâu chi tiết; và vẻ đẹp của low-poly nằm ở quyết định đặt cạnh — việc của artist.
+PoC giới hạn **2 tuần** và có **một người phụ trách** được chỉ định. Hết thời gian thì đánh giá bằng số liệu đang có, không kéo dài. Nếu chỉ có một dev, ưu tiên v0.1 và chạy PoC sau khi luồng Reference xong, vì PoC dùng lại phần căn ảnh.
 
-| Mức | Cách làm | Phiên bản | Kết quả mong đợi |
-| --- | --- | --- | --- |
-| Blockout từ silhouette | Lấy viền ảnh Front và Side (alpha hoặc nền trơn) → đơn giản hóa đường viền → đùn thành khối → Boolean giao 2 khối | v0.3 | Đúng tỷ lệ tổng thể; topology thô, cần dựng lại |
-| Contours low-poly | Vẽ một nét dọc tay/chân/thân cây ở view ortho, chọn 6 hoặc 8 cạnh → sinh chuỗi trụ khớp độ rộng ảnh ref | v0.3 | Gần dùng được ngay |
-| Giảm về budget | Nhập số tris mục tiêu → Decimate, giữ cạnh sắc và ranh giới màu | v0.2 | Ổn với prop; nhân vật cần dọn lại |
-| AI image-to-3D | Gọi dịch vụ ngoài (Meshy, Tripo, Hunyuan3D, TRELLIS...) → import → giảm về budget | Backlog, thử nghiệm | Mesh dày và lộn xộn; chỉ dùng làm nguồn blockout. Tốn phí API, cần xem bản quyền |
+Ưu tiên dựng và kiểm hai JSON viết tay cho Barrel và Terminal, sau đó chạy phép so sánh với plan từ chatbot. Trong PoC, artist có thể sửa JSON trong Text Editor rồi rebuild. Kiểm thử lưu và mở lại `.blend`, giao diện chỉnh tham số riêng và đo profile tự động được xếp sau phép thử chính.
 
-Hai mức đầu đáng làm nhất: cắt phần lớn thời gian blockout của người mới mà vẫn để họ kiểm soát hình khối. Điều kiện: ảnh ref nền trong suốt hoặc nền trơn, cắt sát vật thể.
+### Hợp đồng dữ liệu
 
-## Tham khảo add-on khác
+JSON chứa đủ dữ liệu hình học để bộ dựng có thể tạo mesh. Trong PoC, artist xác nhận các số đo từ ảnh và cung cấp chúng khi viết plan hoặc chuẩn bị prompt. Schema có bản máy đọc được `buildplan.schema.json` (JSON Schema), dùng chung cho validator và gửi kèm mẫu prompt v1.
 
-RetopoFlow cho ý tưởng hữu ích nhất (Contours); Quad Remesher cho ý tưởng "đặt mục tiêu số poly"; Sculpt Layers ít liên quan vì team không sculpt. Không tích hợp trực tiếp add-on nào — cả ba đều trả phí.
+- `schema_version` định danh phiên bản schema. Mỗi phần có `id` duy nhất và ổn định, operation cụ thể và thông số theo operation.
+- Schema v1 yêu cầu `units: "m"` cho cả JSON viết tay và JSON từ chatbot. Mọi chiều dài, tọa độ và khoảng dịch tính bằng mét. Góc tính bằng độ và hệ số nội suy `t` là số trong khoảng 0–1. Prompt ghi rõ các số đo và trục tương ứng đã xác nhận. Xem xét `relative` sau khi có quy tắc quy đổi theo từng trường và fixture kiểm chứng.
+- `inferred: true` ở cấp part đánh dấu chi tiết khuất hoặc ước lượng. Preview tô màu riêng để artist biết cần duyệt.
+- `baked` và `baked_params` là trường do add-on quản lý. JSON đầu vào của **Dán Plan** phải bỏ hai trường này. Trong Text Editor, JSON có thể thiếu chúng hoặc chứa giá trị do add-on đã ghi. Khi rebuild, add-on khôi phục trường thiếu từ object đã bake. Nếu giá trị được khai báo khác trạng thái trên object, hoặc part tự khai đã bake mà chưa có object đã bake tương ứng, báo lỗi theo ID và trường.
+- Ba operation của PoC gồm `add_primitive` cho hộp hoặc trụ, `lathe_profile` cho thân tròn và `extrude_profile` cho mặt cắt đùn theo trục. Chưa cần Boolean, Bend, Array hay một DSL tổng quát.
+- Part không có `attachment` đặt tại gốc root, theo hệ trục của root. Schema v1 cho phép đúng một part như vậy trong mỗi plan; các part khác phải gắn theo quy tắc.
+- Bộ phận gắn theo phần khác khai báo ID cha và quy tắc gắn có cấu trúc. Validator kiểm tra ID trùng, tham chiếu thiếu hoặc vòng lặp, kích thước, `segments` thuộc tập cho phép, số part không gắn, ràng buộc kiểu cha/con của từng quy tắc, trường bị cấm (ví dụ `radius` khi quy tắc tự tính), `segment` nằm trong profile, `t` trong khoảng 0–1 và profile không tự cắt, trước khi tạo object. Báo lỗi theo ID và field để artist sửa ngay hoặc hỏi lại chatbot.
 
-| Add-on | Ý tưởng | Áp dụng cho LowPoly Kit | Ưu tiên |
-| --- | --- | --- | --- |
-| [RetopoFlow 4](https://superhivemarket.com/products/retopoflow?variant=15422) | Contours: sinh vòng cạnh quanh hình trụ (tay, chân, ngón) | Contours low-poly vẽ trên view ortho, 6–8 cạnh, khớp ảnh ref | Cao (v0.3) |
-| RetopoFlow 4 | Tool nằm ngay trong Edit Mode, tự snap lên bề mặt (PolyStrips, PolyPen, Strokes) | Dùng Poly Build, Snap to Face, Shrinkwrap có sẵn của Blender; add-on chỉ preset và hướng dẫn | Trung bình (v0.2) |
-| [Quad Remesher](https://www.exoside.com/quadremesherdata/QuadRemesher_1.3_UserDoc.pdf) | Nhập số poly mục tiêu; vẽ vùng mật độ; giữ cạnh sắc và ranh giới material | Giảm về budget bằng Decimate, giữ cạnh sắc và ranh giới màu vertex color | Trung bình (v0.2) |
-| Quad Remesher | Engine auto-retopo ra quad | Không áp dụng: engine đóng, nhắm tới high-poly | – |
-| [Sculpt Layers](https://superhivemarket.com/products/sculpt-layers-non-destructive-sculpt-layers-with-masks-and-strength-sliders-for-blender) | Layer không phá hủy lưu bằng shape key, có strength và mask | Biến thể asset (prop vỡ/cũ, nhân vật mập/gầy) bằng shape key | Thấp (backlog) |
+**Quy ước hình học**
 
-Godot 4 tự sinh LOD khi import, nên không cần tool LOD.
-
-## Lộ trình
-
-```mermaid
-flowchart TD
-    V01["<b>v0.1 · MVP</b> — Tạo nền chuẩn<br/>Reference Setup: nạp ảnh, scale, khóa<br/>Model Checker: 15 check, nút Sửa và Chọn<br/>Tô vertex color theo palette của team<br/>Export Godot (.glb), chặn khi còn Error<br/>Team config JSON trên ổ chung"]
-    G1{"Cổng 1"}
-    V02["<b>v0.2</b> — Hỗ trợ dựng hình<br/>Panel hướng dẫn từng bước kèm tip<br/>Primitive low-poly, Mirror, flat shade, đếm tris<br/>Giảm về budget (Decimate giữ cạnh sắc)<br/>Collision cho prop (hậu tố -colonly)"]
-    G2{"Cổng 2"}
-    V03["<b>v0.3</b> — Tự động blockout<br/>Blockout từ silhouette Front + Side<br/>Contours low-poly (tay, chân, thân cây)"]
-    BL["<b>Backlog</b> — Chưa lên lịch<br/>Biến thể asset bằng shape key<br/>Export hàng loạt cả scene<br/>Báo cáo checker cho lead<br/>Thử nghiệm AI image-to-3D"]
-    V01 --> G1 --> V02 --> G2 --> V03 -.-> BL
-```
-
-| Cổng | Tiêu chí (đề xuất) |
-| --- | --- |
-| Cổng 1 (v0.1 → v0.2) | Hai bạn mới tự làm xong 1 prop từ ảnh ref đến `.glb`, không cần senior |
-| Cổng 2 (v0.2 → v0.3) | Feedback v0.1 đã xử lý; mọi asset qua checker import vào Godot không lỗi |
-
-Mỗi phiên bản chỉ bắt đầu khi qua cổng của phiên bản trước; tiêu chí cổng là đề xuất, team có thể sửa. Chưa đặt ngày vì còn chờ chốt quyết định ở mục cuối.
-
-## Kiến trúc kỹ thuật
-
-Một package Python thuần, không phụ thuộc thư viện ngoài, phát hành dạng Blender Extension (4.2+).
-
-```
-lowpoly_kit/
-  blender_manifest.toml   # metadata extension
-  __init__.py             # register/unregister các module
-  config.py               # đọc team_config.json, Preferences
-  reference.py            # Reference Setup
-  modeling.py             # primitive, Mirror, flat shade, đếm tris
-  coloring.py             # palette, tô vertex color, material
-  checks.py               # Model Checker: check, fix, select
-  export.py               # export glTF cho Godot
-  ui.py                   # 5 panel trong sidebar
-  team_config.json        # config mặc định / mẫu cho lead
-```
-
-**Nguyên tắc**
-
-- Check và fix dùng `bmesh` trên dữ liệu mesh; chỉ gọi `bpy.ops` cho export và chuyển mode, để ít phụ thuộc context.
-- Check đăng ký theo bảng (id → hàm check, hàm fix, hàm select, cờ an toàn): thêm check mới không phải sửa UI.
-- Tris đếm trên mesh đã qua modifier (đúng với file export); lỗi topology kiểm trên mesh gốc (đúng chỗ người dùng sửa).
-- Mọi fix đều undo được (Ctrl+Z).
-- Option của exporter glTF được dò theo phiên bản Blender, tránh lỗi khi Blender đổi tên tham số.
-
-**Phân phối:** bản đầu gửi file zip (Install from Disk). Sau đó có thể dựng extension repository nội bộ để Blender tự báo bản mới.
-
-**Kiểm thử:** script chạy Blender chế độ nền (`blender -b`) tạo mesh lỗi mẫu cho từng check, xác nhận check bắt được và fix sửa được; export rồi import thử vào Godot 4.
-
-## Quyết định, rủi ro, bước tiếp theo
-
-Cần chốt 6 điểm dưới đây trước khi code v0.1; cột Đề xuất là giá trị mặc định nếu team không có ý kiến khác.
-
-| Quyết định | Đề xuất | Ảnh hưởng |
+| Operation | Tham số chính | Quy ước |
 | --- | --- | --- |
-| Naming convention | Object `CH_Knight`, `PR_Barrel_Broken`; material `M_VertexColor`; file `export/<characters\|props>/<Tên>.glb` | Checker, Export |
-| Budget theo loại | CH 15.000, PR 15.000 (có thể hạ prop nhỏ xuống 3.000) | Checker |
-| Vị trí origin | Đáy, chính giữa (chân nhân vật, đáy prop) | Checker, Export |
-| Nhân vật có rig/armature? | Chưa hỗ trợ trong v0.1 | Export |
-| Ngôn ngữ UI | Tiếng Việt (thuật ngữ Tiếng Anh) | Toàn bộ UI |
-| Cách phát hành | Zip trước, repository nội bộ sau | Vận hành |
+| `add_primitive` | `shape` (`box` / `cylinder`), `size` hoặc `radius` + `height`, `segments` | Gốc local ở tâm đáy, trục cao là +Z local. |
+| `lathe_profile` | `profile_z_radius`, `segments`, `caps` | Xoay quanh trục Z local. Profile là các cặp `[độ cao, bán kính]` tính từ đáy, độ cao tăng dần. `caps` là `"both"`, `"top"`, `"bottom"` hoặc `"none"`. |
+| `extrude_profile` | `plane`, `profile`, `depth`, `caps` | `plane` là `"YZ"` (mặt cắt nhìn từ Right, đùn theo X), `"XZ"` (nhìn từ Front, đùn theo Y) hoặc `"XY"` (nhìn từ Top, đùn theo Z). Profile là đa giác kín, điểm theo chiều ngược kim đồng hồ khi nhìn từ hướng dương của trục đùn, không tự cắt. Đùn đối xứng hai phía mặt phẳng gốc. |
 
-**Rủi ro**
+- `segments` của khối tròn thuộc tập {4, 8, 12, 16}.
+- Góc pha: tâm một mặt nằm trên −Y local, tức hướng Front. Vì số cạnh chia hết cho 4, view Right cũng nhìn thẳng vào một mặt, và các khối tròn cùng số cạnh có mặt thẳng hàng.
+- Bán kính trong schema là **bán kính tới mặt**: khoảng cách từ trục đến tâm mỗi mặt phẳng. Nhờ góc pha trên, giá trị này bằng nửa bề rộng silhouette trên ảnh Front và Right, nên số đo từ ảnh ghi thẳng vào JSON. Bộ dựng tự tính bán kính tới đỉnh bằng `r / cos(180°/n)`.
+- `height` trong quy tắc gắn là cao độ của **tâm** phần con, đo theo trục cao của phần cha.
 
-| Rủi ro | Giảm thiểu |
+**Quy tắc gắn** (`attachment.rule`)
+
+| Rule | Tham số | Ý nghĩa |
+| --- | --- | --- |
+| `lathe_radius_at_height` | `parent_id`, `height`, `radial_offset` | Cha là `lathe_profile`, con là `add_primitive` cylinder cùng `segments` với cha và không khai báo `radius`. Phần con đồng trục với cha. Bán kính của con bằng bán kính lớn nhất của profile cha trên khoảng chiều cao mà con chiếm, cộng `radial_offset`, để không đầu nào của con chìm vào thân. Dùng cho đai, nắp, vành. |
+| `profile_segment` | `parent_id`, `segment`, `t`, `normal_offset`, `align` | Cha là `extrude_profile`. `segment` là chỉ số từ 0, tính cả đoạn từ điểm cuối về điểm đầu. Lấy điểm theo `t` từ đầu đến cuối đoạn, tại giữa bề dày đùn, rồi dịch `normal_offset` theo pháp tuyến ngoài của mặt. Đặt gốc local của phần con tại điểm đó. Với `align: "surface"`, trục +X local của con theo chiều dương của trục đùn, +Z theo pháp tuyến ngoài và +Y = +Z × +X. |
+
+Quy tắc `offset` cho vị trí và góc tương đối trong hệ local của cha được xếp sau PoC.
+
+Ví dụ rút gọn với hai phần của `PR_Barrel`. Bán kính trong profile là bán kính tới mặt, đo trực tiếp từ nửa bề rộng thân trên ảnh Front. Đai đặc trong PoC là khối đại diện, bán kính lấy từ tiết diện lớn nhất của thân trong khoảng chiều cao của đai, cộng khoảng nhô.
+
+```json
+{
+  "schema_version": 1,
+  "asset_name": "PR_Barrel",
+  "units": "m",
+  "parts": [
+    {
+      "id": "body",
+      "op": "lathe_profile",
+      "segments": 8,
+      "caps": "both",
+      "profile_z_radius": [[0.0, 0.26], [0.45, 0.31], [0.90, 0.26]]
+    },
+    {
+      "id": "upper_band",
+      "op": "add_primitive",
+      "shape": "cylinder",
+      "segments": 8,
+      "height": 0.05,
+      "inferred": false,
+      "attachment": {
+        "parent_id": "body",
+        "rule": "lathe_radius_at_height",
+        "height": 0.72,
+        "radial_offset": 0.015
+      }
+    }
+  ]
+}
+```
+
+Ví dụ rút gọn với hai phần của `PR_Terminal`. Thân là mặt cắt Right đùn theo X, đoạn 3 là mặt nghiêng phía trước. Tâm đáy bàn phím đặt giữa mặt nghiêng. Cạnh `0.40 m` chạy theo trục đùn, cạnh `0.12 m` chạy dọc mặt nghiêng và chiều dày `0.02 m` hướng ra ngoài.
+
+```json
+{
+  "schema_version": 1,
+  "asset_name": "PR_Terminal",
+  "units": "m",
+  "parts": [
+    {
+      "id": "body",
+      "op": "extrude_profile",
+      "plane": "YZ",
+      "depth": 0.50,
+      "caps": "both",
+      "profile": [[-0.20, 0.0], [0.20, 0.0], [0.20, 0.45], [-0.05, 0.45], [-0.20, 0.30]]
+    },
+    {
+      "id": "keyboard",
+      "op": "add_primitive",
+      "shape": "box",
+      "size": [0.40, 0.12, 0.02],
+      "attachment": {
+        "parent_id": "body",
+        "rule": "profile_segment",
+        "segment": 3,
+        "t": 0.5,
+        "normal_offset": 0.0,
+        "align": "surface"
+      }
+    }
+  ]
+}
+```
+
+### Lưu plan và rebuild
+
+- Plan lưu trong Text datablock `<tên root>.buildplan.json`. Root giữ tên datablock trong custom property `lpk_build_plan`, mỗi object sinh ra mang `lpk_part_id`.
+- **Dán Plan** và **Rebuild** từ Text Editor dùng chung quy trình dưới đây. Nội dung artist đang sửa là bản nháp cho tới khi dựng thành công.
+
+1. Đọc bản nháp, kiểm tra cấu trúc đầu vào và tính duy nhất của part ID. Trong phạm vi root, xác định object gốc của từng ID bằng tham chiếu object đã lưu từ lần dựng thành công trong phiên. Tham chiếu vẫn nhận diện được bản gốc sau khi đổi tên. Nếu nhiều object mang cùng ID và chưa xác định được bản gốc, dừng trước khi sửa mesh hoặc gỡ property, liệt kê các object để artist xử lý. Tên object chỉ dùng để hiển thị.
+2. Với mỗi ID còn tồn tại và đã bake, lấy operation, thông số và quan hệ gắn đã lưu khi bake để lập plan dùng cho lần dựng. Khôi phục `baked` và `baked_params` theo trạng thái của object, báo các thay đổi trong bản nháp bị bỏ qua. Kiểm tra lại toàn bộ plan sau bước ghép, gồm kiểu cha/con, tham chiếu, chu trình và các ràng buộc hình học. Nếu liên kết sai, báo ID con, ID cha và trường liên quan.
+3. Dựng thử các preview cần cập nhật. Chỉ khi toàn bộ bước dựng thành công mới cập nhật scene, bảng tham chiếu object và Text datablock. Khi có lỗi, giữ bản dựng đã thành công gần nhất. Nếu artist đang sửa trong Text Editor, giữ bản nháp và vị trí lỗi để họ sửa tiếp.
+4. Khi áp dụng kết quả, cập nhật preview còn ID, dọn preview có ID bị xóa và xử lý đổi ID như xóa ID cũ rồi thêm ID mới. Với part đã bake bị xóa khỏi plan, giữ mesh trong asset, gỡ thông tin quản lý Build Plan và báo cho artist. Với bản sao đã xác định được object gốc, cũng gỡ thông tin quản lý khỏi bản sao. Các mesh đã gỡ liên kết vẫn thuộc phạm vi checker và export khi còn nằm dưới root.
+
+### Bake
+
+- Bake đánh dấu part `baked: true` và lưu snapshot gồm operation, thông số hình học, quan hệ gắn và hệ trục của part so với root lúc bake. Add-on ghi snapshot vào `baked_params` và lưu bản đối chiếu trên object. Object giữ mesh hiện tại, rebuild không ghi đè.
+- Phần con gắn vào phần đã bake tiếp tục đọc `baked_params` của cha và dùng gốc của cha tại thời điểm bake để dựng lại. Nếu artist sửa hình phần cha trong Edit Mode sau khi bake, điểm gắn vẫn tính từ snapshot. Hiển thị lưu ý khi bake để artist biết lúc nào cần bake phần con hoặc chỉnh tay.
+- Thao tác bỏ bake chưa có trong PoC.
+
+### Trải nghiệm và phép thử
+
+1. Chạy bộ dựng bằng JSON viết tay, dùng ảnh Front, Right, Top của `PR_Barrel` và `PR_Terminal`. Terminal dùng mặt cắt Right để dựng thân và gắn bàn phím lên mặt nghiêng.
+2. Thử cùng bộ ảnh với JSON từ ChatGPT hoặc Claude. **Copy Prompt** cung cấp schema, danh mục thao tác và số đo đã xác nhận, artist gửi prompt với ảnh đã được phép dùng, rồi **Dán Plan** vào add-on. Có thể chuẩn bị prompt từ mẫu và dán JSON vào Text Editor để chạy phép thử trước khi có các nút trên. Add-on hoạt động offline.
+3. Dựng preview từng phần, chiếu đường bao model trở lại các view đã căn và đánh dấu chi tiết ước lượng. Chỉnh bán kính thân Barrel để kiểm tra đai cập nhật theo. Với Terminal, kiểm tâm đáy bàn phím và hướng của cả ba trục theo quy tắc gắn.
+4. Với mỗi prop, chạy ít nhất hai lượt so sánh theo cặp. Trong mỗi lượt, cùng một artist thực hiện cả hai luồng từ scene có cùng bộ ảnh đã căn, dùng cùng danh sách bộ phận bắt buộc và tiêu chí duyệt. Đảo thứ tự hai luồng giữa các lượt. Ghi thời gian, số thông số đã chỉnh, phần còn thiếu và sai số đường bao theo từng view.
+
+5. Với luồng chatbot, lead duyệt bản preview dựng từ JSON trước khi bake hoặc chỉnh mesh tay. Dùng chính bản preview đó để đo đường bao, chốt thời gian và số thông số đã chỉnh. Nếu phải chỉnh mesh tay mới đủ điều kiện duyệt, ghi lượt đó là chưa đạt. Sau khi ghi kết quả, artist có thể bake, chỉnh trong Edit Mode hoặc gộp mesh để bàn giao.
+
+**Cách đo**
+
+- **Thời gian.** Bắt đầu khi artist mở scene đã căn ảnh và nhận yêu cầu dựng. Dừng ở lần đầu có blockout được lead duyệt. Luồng chatbot tính cả chuẩn bị prompt, gửi ảnh, chờ phản hồi, gửi lại yêu cầu, dán, dựng và chỉnh. Mỗi cặp lượt tính tỷ lệ tiết kiệm bằng `(thời gian dựng tay - thời gian dùng chatbot) / thời gian dựng tay`.
+- **Đường bao.** Chuẩn bị một mask tham chiếu đã được lead duyệt cho mỗi view, có thể tạo tay trong PoC. Chiếu mesh trên cùng gốc, scale và lưới pixel đã căn. Với mỗi điểm trên đường bao của một mask, đo khoảng cách đến điểm gần nhất trên đường bao kia. Đo theo cả hai chiều, lấy khoảng cách lớn nhất và chia cho cạnh dài hơn của khung bao vật thể tham chiếu trong view đó. Dùng khung bao của vật thể để padding không ảnh hưởng kết quả. Mask của mesh có thể lấy bằng render Workbench nền trong suốt với camera ortho khớp gốc, scale và lưới pixel của view đã căn; tính khoảng cách đường bao bằng numpy vì Blender không đóng gói sẵn scipy.
+- **Số thông số chỉnh.** Sau lần dựng thành công đầu tiên, đếm các trường giá trị khác nhau đã đổi trên toàn bộ các lần dựng tiếp theo, gồm thay đổi do yêu cầu chatbot làm lại. Định danh trường theo part ID và đường dẫn trong JSON, tính riêng từng thành phần vector hoặc điểm profile. Một trường sửa nhiều lần chỉ tính một lần. Khi thêm hoặc xóa part, tính các trường giá trị tương ứng của part đó. Các lần thử JSON lỗi trước lần dựng đầu tiên được tính vào thời gian.
+
+**Ngưỡng quyết định.** Lead xác nhận ngưỡng trước khi chạy. Đề xuất tích hợp Build Plan khi cả Barrel và Terminal có đủ lượt so sánh và trung vị tỷ lệ tiết kiệm của từng prop đạt ít nhất 30%. Mỗi lượt chatbot phải có blockout được duyệt, sai số đường bao tối đa 5% ở từng view và số thông số chỉnh nằm trong ngưỡng đã chốt (đề xuất 5). Hiệu chỉnh ngưỡng 5 thông số bằng hai plan viết tay trước khi lead chốt, vì cách đếm theo từng thành phần khiến một lần nắn profile có thể tốn 3–6 trường. Nếu hết hai tuần mà thiếu lượt hoặc còn lượt chưa được duyệt, ghi kết quả và lý do. Lead đánh giá từ dữ liệu đã thu được trong khung hai tuần.
+
+## Lộ trình và tiêu chí nghiệm thu
+
+| Mốc | Phạm vi | Điều kiện hoàn thành |
+| --- | --- | --- |
+| PoC Build Plan, tối đa 2 tuần, chạy song song v0.1 nếu đủ người | Barrel và Terminal, ba phép dựng, quy tắc gắn cho đai và bàn phím, schema v1 kèm `buildplan.schema.json`, mẫu prompt v1, preview, sửa JSON và rebuild, bake từng phần | JSON viết tay dựng ra mesh thực và khớp tỷ lệ các view. Kiểm được quan hệ phụ thuộc, kể cả sau khi bake phần cha, và cách rebuild xử lý part bị xóa. Báo cáo kết quả phép so sánh theo ngưỡng quyết định hoặc ghi rõ dữ liệu còn thiếu khi hết hai tuần. |
+| v0.1 | Reference, dựng tay, palette, checker thiết yếu, config và export static prop | Hai bạn mới tự làm xong một prop từ ảnh ref đến `.glb` mà không cần senior thao tác hộ. Lead xác nhận kích thước, hướng, pivot, màu và đủ bộ phận trong Godot. |
+| v0.2 | Cải thiện theo feedback v0.1. Ưu tiên primitive low-poly, preset Mirror/flat shade và tip. | Các lỗi trong bài dùng thử được xử lý. Build Plan vào sidebar khi PoC đạt ngưỡng quyết định. |
+| Backlog | Contours theo cảm hứng RetopoFlow, collision cho prop, xuất Empty thành Node3D cho bản lề và điểm gắn, quy tắc gắn `offset`, bỏ bake, preview Decimate, nhân vật và rig, shape key, batch export, báo cáo checker, tích hợp API | Đánh giá khi có asset và nhu cầu cụ thể. Với Decimate, thử silhouette, cạnh sắc và ranh giới vertex color trước khi đưa ra preset. |
+
+## Kiến trúc và kiểm thử
+
+- Một package Python với `blender_manifest.toml`, phân phối qua zip **Install from Disk** trước. Các module chính là `config.py`, `reference.py`, `modeling.py`, `coloring.py`, `checks.py`, `export.py` và `ui.py`. PoC thêm `buildplan.py` cho validator (đọc `buildplan.schema.json` cộng các ràng buộc ngữ nghĩa), bộ dựng bằng `bmesh` và quản lý plan trong phiên làm việc. Khi triển khai đo profile tự động và đề xuất mốc căn, dùng chung `measure.py` để tách đường bao và đọc pixel theo lô bằng `image.pixels.foreach_get`.
+- Dùng chung bộ chọn phạm vi asset cho checker và export. Registry của checker chứa ID, severity, hàm kiểm tra, thao tác chọn và cờ an toàn (dự phòng cho **Sửa tất cả** sau này). Dùng mesh data hoặc `bmesh` cho check/fix, gọi operator cho các thao tác cần context như export hoặc chuyển mode.
+- Dùng `blender -b` để kiểm ảnh có padding khác nhau, mốc đo bổ sung bị thiếu hoặc lệch dung sai, root nhiều mesh với modifier, mặt hở chủ ý, budget tổng vượt giới hạn, fix/undo và trạng thái scene sau khi export thất bại. Thử root có rotation hoặc scale khác chuẩn, mesh con có scale âm và fixture export có mesh ẩn dưới Empty trung gian. Thử schema với đơn vị sai, ID trùng, cha bị thiếu, tham chiếu vòng, `segment` ngoài profile, profile tự cắt, `segments` ngoài tập cho phép, hơn một part không gắn, quy tắc gắn sai kiểu cha/con, `radius` khai báo cùng `lathe_radius_at_height` và plan dán vào có trường do add-on quản lý. Thử rebuild khi xóa hoặc đổi ID của part preview, xóa part đã bake, sửa `baked_params` bằng tay, nhân bản object của một part, dán plan mới lên plan có part đã bake và khi lần dựng mới thất bại. Kiểm silhouette của khối tròn 8 cạnh trên view Front và Right khớp bán kính tới mặt trong JSON. Test UI trong Blender và smoke test file xuất trong Godot 4 trên phiên bản team đã chốt.
+- Các bài test dưới đây bổ sung kết quả mong đợi cho các tình huống dễ làm sai hình học hoặc ghi đè mesh.
+
+| Tình huống | Kết quả mong đợi |
 | --- | --- |
-| Checker quá khắt khe làm người mới nản | Chỉ Error chặn export; ngưỡng chỉnh được trong config |
-| Ảnh ref bẩn làm hỏng scale và blockout tự động | Đưa quy chuẩn ảnh ref (nền trong suốt, cắt sát, cùng tỷ lệ) vào guideline của team ngay từ đầu |
-| Fix tự động phá model (apply rotation khi có Mirror, dời origin) | Fix không an toàn không nằm trong Sửa tất cả; mọi fix undo được |
-| Blender đổi API giữa các phiên bản | Khóa bản tối thiểu 4.2 LTS; dò option exporter theo phiên bản |
-| Vertex color không hiện trong Godot | Kiểm thử import thật; hướng dẫn bật Vertex Color > Use as Albedo nếu cần |
+| Thân thùng kiểu Mesh làm root, đai là con | Checker báo Error, export dừng trước khi ghi file. Sau khi parent cả thân và đai vào Empty root hợp lệ, chọn đai vẫn kiểm và xuất đủ hai mesh. |
+| Hai mesh có scale `(-1, 1, 1)` và `(-1, -1, 1)`, cha có transform đơn vị | Checker chỉ đúng các trục âm của từng mesh. Dấu định thức toàn cục lần lượt là âm và dương. Với material bật backface culling, đối chiếu cùng một mặt từ phía ngoài và phía trong sau khi import vào Godot. Mặt ngoài phải hiển thị, mặt trong bị loại ở cả hai fixture. |
+| Hai JSON mẫu ở trên | Đai Barrel trải từ Z = 0.695 đến 0.745 m, bán kính tới mặt xấp xỉ 0.29778 m theo nội suy tuyến tính của profile. Tâm đáy bàn phím Terminal ở `(0, -0.125, 0.375) m` trong hệ local của thân. Cạnh dài 0.40 m song song trục X của thân. |
+| Bake thân Barrel, sửa một đỉnh trong Edit Mode, thay toàn bộ JSON bằng bản cùng ID thiếu các trường bake | Thử riêng qua **Dán Plan** và Text Editor. Cả hai lần rebuild đều khôi phục trạng thái bake và giữ tọa độ đỉnh artist đã sửa. |
+| Giữ thân đã bake kiểu `lathe_profile`, dán plan mới dùng cùng ID cho thân Terminal và gắn bàn phím bằng `profile_segment` | Sau khi ghép snapshot, validator báo liên kết `keyboard → body` sai kiểu cha. Mesh, liên kết quản lý và bản dựng đã thành công vẫn nguyên vẹn. |
+| Nhân bản một part, đổi tên bản gốc rồi đặt tên cũ cho bản sao | Rebuild vẫn nhận đúng bản gốc qua tham chiếu trong phiên. Khi bỏ tham chiếu để mô phỏng trường hợp mơ hồ, rebuild báo các object trùng ID và dừng trước khi sửa cả hai. |
 
-**Bước tiếp theo**
+- Tài liệu kỹ thuật tham khảo cho export và tối ưu mesh: [Blender 4.2 — glTF 2.0](https://docs.blender.org/manual/en/4.2/addons/import_export/scene_gltf2.html) · [Blender 4.2 — Decimate Modifier](https://docs.blender.org/manual/en/4.2/modeling/modifiers/generate/decimate.html) · [Godot — Available 3D formats](https://docs.godotengine.org/en/stable/tutorials/assets_pipeline/importing_3d_scenes/available_formats.html)
 
-- [ ] Team chốt 6 quyết định ở bảng trên
-- [ ] Chuẩn bị 2–3 bộ ảnh ref mẫu (1 nhân vật, 1–2 prop) để test
-- [ ] Code v0.1 theo spec này
-- [ ] 1–2 bạn mới dùng thử trên asset thật, thu feedback
-- [ ] Chốt phạm vi v0.2
+## Việc cần chốt trước khi bắt đầu
+
+- [ ] Lead chọn chuẩn tên root, danh sách nhóm budget và nhóm mặc định, palette và dung sai căn ảnh.
+- [ ] Lead duyệt ngưỡng quyết định của PoC (30% thời gian, 5% đường bao, tối đa 5 thông số đã hiệu chỉnh bằng plan viết tay) trước khi chạy thử so sánh.
+- [ ] Chỉ định người phụ trách PoC và ngày bắt đầu khung 2 tuần.
+- [ ] Chốt phiên bản Blender/Godot dùng để nghiệm thu và UI tiếng Việt với thuật ngữ Blender bằng tiếng Anh.
+- [ ] Chuẩn bị hai bộ ảnh ortho cho Barrel và Terminal, kèm kích thước thật, mốc căn và mask tham chiếu đã duyệt cho từng view. Dùng ảnh team cho phép gửi nếu thử qua chatbot.
+- [ ] Chạy hai plan viết tay trước, sau đó ghi kết quả các lượt so sánh chatbot và dựng tay theo cặp.
+- [ ] Mời hai artist mới chạy luồng v0.1 và duyệt file trong Godot trước khi chốt phạm vi bản tiếp theo.
