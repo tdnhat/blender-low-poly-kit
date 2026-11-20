@@ -77,3 +77,72 @@ def scope_tris(context, scope, nodes_by_key):
         if obj is not None:
             result[nodes_by_key[key].name] = evaluated_tris(obj, depsgraph)
     return result
+
+
+# ---------------------------------------------------------------- mesh data
+
+def mesh_data(obj, det_sign):
+    """Plain topology of the object's own mesh (not evaluated), local space."""
+    from .core.checks.topology import MeshData
+
+    if obj.mode == "EDIT":
+        obj.update_from_editmode()
+    mesh = obj.data
+    nv, ne, np_, nl = len(mesh.vertices), len(mesh.edges), len(mesh.polygons), len(mesh.loops)
+    co = [0.0] * (nv * 3)
+    mesh.vertices.foreach_get("co", co)
+    ev = [0] * (ne * 2)
+    mesh.edges.foreach_get("vertices", ev)
+    starts, totals = [0] * np_, [0] * np_
+    mesh.polygons.foreach_get("loop_start", starts)
+    mesh.polygons.foreach_get("loop_total", totals)
+    lv = [0] * nl
+    mesh.loops.foreach_get("vertex_index", lv)
+    verts = [tuple(co[i:i + 3]) for i in range(0, len(co), 3)]
+    edges = [(ev[i], ev[i + 1]) for i in range(0, len(ev), 2)]
+    faces = [tuple(lv[s:s + t]) for s, t in zip(starts, totals)]
+    return MeshData(verts, edges, faces, det_sign)
+
+
+def smooth_faces(mesh):
+    flags = [False] * len(mesh.polygons)
+    mesh.polygons.foreach_get("use_smooth", flags)
+    return [i for i, f in enumerate(flags) if f]
+
+
+def color_attributes(mesh):
+    from .core.checks.asset import ColorAttr
+
+    return [ColorAttr(a.name, a.domain, a.data_type) for a in mesh.color_attributes]
+
+
+def unique_colors(mesh, attribute, cap=2):
+    from .core import coloring as core_coloring
+
+    attr = mesh.color_attributes.get(attribute)
+    if attr is None:
+        return None
+    flat = [0.0] * (len(attr.data) * 4)
+    attr.data.foreach_get("color_srgb", flat)
+    return core_coloring.unique_colors(core_coloring.unflatten(flat), cap)
+
+
+def mesh_info(obj, tris, cfg):
+    from . import materials
+    from .core.checks.asset import MeshInfo
+
+    mesh = obj.data
+    return MeshInfo(
+        key=obj.name,
+        name=obj.name,
+        data_name=mesh.name,
+        basis_matrix=matrix_tuple(obj.matrix_basis),
+        local_scale=tuple(obj.scale),
+        matrix_world=matrix_tuple(obj.matrix_world),
+        modifiers=[m.name for m in obj.modifiers],
+        tris=tris,
+        color_attributes=color_attributes(mesh),
+        materials=[materials.summarize(slot.material) for slot in obj.material_slots],
+        smooth_faces=smooth_faces(mesh),
+        colors=unique_colors(mesh, cfg["color_attribute"]),
+    )

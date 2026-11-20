@@ -71,3 +71,23 @@ def sort_results(results):
 
 def error_count(results):
     return sum(1 for r in results if r.severity == "ERROR")
+
+
+def group_by_object(results):
+    """[(object_key or None, [results])], asset-wide results first, order kept."""
+    groups = {}
+    order = []
+    for r in sort_results(results):
+        if r.object_key not in groups:
+            groups[r.object_key] = []
+            order.append(r.object_key)
+        groups[r.object_key].append(r)
+    order.sort(key=lambda k: (k is not None, min(SEVERITY_ORDER[r.severity] for r in groups[k]), k or ""))
+    return [(k, groups[k]) for k in order]
+
+
+def summary_counts(results):
+    counts = {"ERROR": 0, "WARNING": 0, "INFO": 0}
+    for r in results:
+        counts[r.severity] += 1
+    return counts

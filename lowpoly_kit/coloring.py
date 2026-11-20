@@ -132,8 +132,10 @@ def sync_palette(scene, cfg):
 
 def _sync_palette_timer():
     cfg = config_ui.get_config()
+    wanted = [h for h, _rgb in core_coloring.palette(cfg)]
     for scene in bpy.data.scenes:
-        if len(scene.lpk_palette) != len(cfg.get("palette", [])):
+        current = [core_colors.srgb_to_hex(item.color) for item in scene.lpk_palette]
+        if current != wanted:
             sync_palette(scene, cfg)
     return None
 
