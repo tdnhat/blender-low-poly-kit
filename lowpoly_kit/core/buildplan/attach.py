@@ -16,22 +16,35 @@ def part_params(part):
 
 
 def snapshot(resolved):
-    """Bake snapshot ``{op, params, attachment, matrix_root}`` of a resolved part."""
-    return {
+    """Bake snapshot ``{op, params, computed, attachment, matrix_root}``."""
+    params = part_params(resolved.part)
+    params.pop("op", None)
+    snap = {
         "op": resolved.op,
-        "params": dict(part_params(resolved.part), **resolved.computed),
-        "attachment": resolved.part.get("attachment"),
+        "params": params,
+        "computed": dict(resolved.computed),
         "matrix_root": [list(row) for row in resolved.matrix_root],
     }
+    if "attachment" in resolved.part:
+        snap["attachment"] = resolved.part["attachment"]
+    return snap
+
+
+def part_from_snapshot(part_id, snap):
+    """Plan part (as declared, without computed values) rebuilt from a snapshot."""
+    part = {"id": part_id, "op": snap["op"]}
+    part.update(snap.get("params", {}))
+    if snap.get("attachment"):
+        part["attachment"] = snap["attachment"]
+    return part
 
 
 def _effective(part):
     """Parameters used for geometry: the bake snapshot when baked."""
     if part.get("baked") and isinstance(part.get("baked_params"), dict):
         snap = part["baked_params"]
-        eff = dict(snap.get("params", {}))
-        eff["id"] = part["id"]
-        eff["op"] = snap.get("op", part["op"])
+        eff = part_from_snapshot(part["id"], snap)
+        eff.update(snap.get("computed", {}))
         return eff, vm.as_matrix(snap["matrix_root"]) if "matrix_root" in snap else None
     return part, None
 
