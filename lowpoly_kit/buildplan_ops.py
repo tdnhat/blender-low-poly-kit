@@ -26,6 +26,7 @@ def _active_text_root(context):
 def _report_errors(op, errors, text=None, draft=""):
     runtime.plan_errors = [(e.code, e.params, e.line, e.col, e.pointer) for e in errors]
     runtime.plan_last_draft = draft
+    runtime.plan_errors_are_warnings = False
     if text is not None and errors and hasattr(text, "cursor_set"):
         try:
             text.cursor_set(max(0, errors[0].line - 1), character=max(0, errors[0].col - 1))
@@ -35,10 +36,14 @@ def _report_errors(op, errors, text=None, draft=""):
     op.report({"ERROR"}, messages.text(first.code, first.params) + (f" (+{len(errors) - 1} lỗi)" if len(errors) > 1 else ""))
 
 
-def _report_notes(op, notes):
-    runtime.plan_errors = []
+def _report_notes(op, notes, warnings=(), draft=""):
+    runtime.plan_errors = [(w.code, w.params, w.line, w.col, w.pointer) for w in warnings]
+    runtime.plan_last_draft = draft if warnings else ""
+    runtime.plan_errors_are_warnings = bool(warnings)
     for code, params in notes:
         op.report({"INFO"}, messages.text(code, params))
+    for w in warnings:
+        op.report({"WARNING"}, messages.text(w.code, w.params))
 
 
 def run_plan(op, context, root, text_value, mode, source_text=None):
@@ -71,7 +76,7 @@ def run_plan(op, context, root, text_value, mode, source_text=None):
     store.append_log(root, {"mode": mode, "ok": True, "parts": [r.id for r in result.resolved],
                             "plan": result.plan})
     runtime.invalidate_checks()
-    _report_notes(op, result.notes)
+    _report_notes(op, result.notes, result.warnings, text_value)
     return {"FINISHED"}
 
 
@@ -200,7 +205,8 @@ class LPK_OT_plan_copy_errors(bpy.types.Operator):
 
     def execute(self, context):
         rows = [(messages.text(code, params), pointer, line, col) for code, params, line, col, pointer in runtime.plan_errors]
-        context.window_manager.clipboard = core_prompt.build_error_prompt(rows, runtime.plan_last_draft)
+        context.window_manager.clipboard = core_prompt.build_error_prompt(
+            rows, runtime.plan_last_draft, rejected=not runtime.plan_errors_are_warnings)
         self.report({"INFO"}, f"Đã chép {len(rows)} lỗi; dán vào cuộc trò chuyện với chatbot")
         return {"FINISHED"}
 
@@ -456,7 +462,8 @@ class LPK_PT_plan_text(bpy.types.Panel):
         if runtime.plan_errors:
             layout.operator("lpk.plan_copy_errors", icon="COPYDOWN")
         for code, params, line, col, _pointer in runtime.plan_errors[:8]:
-            layout.label(text=f"{line}:{col} {messages.text(code, params)}", icon="ERROR")
+            layout.label(text=f"{line}:{col} {messages.text(code, params)}",
+                         icon="INFO" if runtime.plan_errors_are_warnings else "ERROR")
 
 
 classes = (LPK_OT_plan_paste, LPK_OT_plan_rebuild, LPK_OT_plan_open, LPK_OT_plan_bake, LPK_OT_plan_copy_prompt,

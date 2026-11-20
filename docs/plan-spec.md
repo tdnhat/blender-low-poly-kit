@@ -120,6 +120,8 @@ JSON chứa đủ dữ liệu hình học để bộ dựng có thể tạo mesh
 | `body_surface` | `parent_id`, `a`, `b`, `side`, `normal_offset`, `align`, `rotation` (tùy chọn) | Cha là `extrude_profile` (mọi `section`). Từ điểm (a, b) trên mặt phẳng giữa, bắn tia theo trục đùn về phía `side` (`+`/`-`) tới mặt thân; gốc local của con đặt tại điểm chạm dịch `normal_offset`. +Z theo pháp tuyến mặt, +X dọc thân theo chiều tọa độ thứ nhất tăng, `rotation` (Euler XYZ, độ) xoay thêm trong hệ đó. (a, b) phải nằm trong profile. Dùng cho mắt, vây ngực, mang, tay cầm; kết hợp `mirror` cho chi tiết hai bên. Cha đã bake thì tia bắn vào hình dựng lại từ snapshot. |
 | `offset` | `parent_id`, `position`, `rotation` | Vị trí (mét) và góc Euler XYZ (độ) trong hệ local của cha, với mọi kiểu cha. Dùng khi các quy tắc trên không phù hợp. |
 
+**Kiểm tra tiếp xúc.** Sau khi dựng, add-on cảnh báo (không chặn) khi một part không chạm part cha: không đỉnh nào nằm trong hoặc cách mặt cha dưới 1 mm, và không cạnh nào cắt mặt của part kia. Cách kiểm cạnh cắt mặt bắt được cả trường hợp đai ôm quanh thân. Add-on cũng cảnh báo `normal_offset` dương ở các quy tắc gắn lên mặt, vì gốc của primitive là tâm đáy nên giá trị dương làm part rời khỏi mặt. Cảnh báo hiện theo dòng trong JSON và được **Copy lỗi cho chatbot** chép kèm.
+
 Ví dụ rút gọn với hai phần của `PR_Barrel`. Bán kính trong profile là bán kính tới mặt, đo trực tiếp từ nửa bề rộng thân trên ảnh Front. Đai đặc trong PoC là khối đại diện, bán kính lấy từ tiết diện lớn nhất của thân trong khoảng chiều cao của đai, cộng khoảng nhô.
 
 ```json

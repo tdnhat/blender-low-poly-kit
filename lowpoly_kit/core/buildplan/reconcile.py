@@ -9,7 +9,8 @@ are no errors (spec "Lưu plan và rebuild", steps 1–4).
 import json
 from collections import namedtuple
 
-from . import attach
+from .. import strict_json
+from . import attach, contact
 from .validate import MANAGED_FIELDS, PlanError, validate, validate_text
 
 ObjState = namedtuple("ObjState", "key part_id uid baked_snapshot")
@@ -19,7 +20,8 @@ ObjState = namedtuple("ObjState", "key part_id uid baked_snapshot")
 Action = namedtuple("Action", "kind key part_id data")
 # kinds: CREATE, REPLACE_MESH, SET_TRANSFORM, SET_META, DELETE, STRIP, WRITE_TEXT
 
-ReconcileResult = namedtuple("ReconcileResult", "errors plan resolved actions notes registry_parts")
+ReconcileResult = namedtuple("ReconcileResult", "errors plan resolved actions notes registry_parts warnings")
+ReconcileResult.__new__.__defaults__ = ([],)
 
 
 def _err(code, params):
@@ -142,7 +144,31 @@ def reconcile(text, mode, root_name, objects, registry):
 
     registry_parts = {pid: originals[pid].key for pid in plan_ids if pid in originals}
     notes.append(("plan_built", {"count": len(resolved)}))
-    return ReconcileResult([], merged, resolved, actions, notes, registry_parts)
+    warnings = contact_warnings(text, merged, resolved)
+    return ReconcileResult([], merged, resolved, actions, notes, registry_parts, warnings)
+
+
+def contact_warnings(text, plan, resolved):
+    """PlanError-shaped warnings for parts that do not touch their parent."""
+    try:
+        _value, positions = strict_json.loads_with_positions(text)
+    except strict_json.JsonError:
+        positions = {}
+    index = {p["id"]: i for i, p in enumerate(plan["parts"])}
+    out = []
+    for part in plan["parts"]:
+        att = part.get("attachment") or {}
+        if att.get("rule") in ("body_surface", "box_face", "profile_segment") and att.get("normal_offset", 0) > contact.TOL:
+            pointer = f"/parts/{index[part['id']]}/attachment/normal_offset"
+            line, col = strict_json.position_for(positions, pointer)
+            out.append(PlanError("plan_positive_normal_offset", {"id": part["id"], "value": att["normal_offset"]},
+                                 pointer, line, col))
+    for pid, parent in contact.floating_parts(resolved):
+        base = pid[:-len(attach.MIRROR_SUFFIX)] if pid not in index and pid.endswith(attach.MIRROR_SUFFIX) else pid
+        pointer = f"/parts/{index[base]}/attachment" if base in index else ""
+        line, col = strict_json.position_for(positions, pointer)
+        out.append(PlanError("plan_part_floating", {"id": pid, "parent": parent}, pointer, line, col))
+    return out
 
 
 def dump_plan(plan):

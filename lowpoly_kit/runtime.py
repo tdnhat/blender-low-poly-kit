@@ -17,6 +17,8 @@ tri_cache = None
 plan_errors = []
 # Draft text of the last rejected plan (for "Copy lỗi cho chatbot")
 plan_last_draft = ""
+# True when plan_errors are warnings of a successful build
+plan_errors_are_warnings = False
 
 
 def invalidate_checks():
@@ -26,7 +28,8 @@ def invalidate_checks():
 
 
 def clear():
-    global config_result, check_state, plan_errors, tri_cache, plan_last_draft
+    global config_result, check_state, plan_errors, tri_cache, plan_last_draft, plan_errors_are_warnings
+    plan_errors_are_warnings = False
     config_result = None
     check_state = None
     plan_errors = []

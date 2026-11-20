@@ -39,12 +39,15 @@ def build_prompt(asset_name, schema_text, measurements, views=(), template=None)
             .replace("{{schema}}", schema_text.strip()))
 
 
-def build_error_prompt(errors, plan_text=None):
-    """Follow-up message asking the chatbot to fix a rejected plan.
+def build_error_prompt(errors, plan_text=None, rejected=True):
+    """Follow-up message asking the chatbot to fix a plan.
 
-    ``errors``: iterable of (message, pointer, line, col).
+    ``errors``: iterable of (message, pointer, line, col). ``rejected`` False
+    means the plan was built but has warnings (for example floating parts).
     """
-    lines = ["Build Plan bạn vừa trả về bị add-on từ chối với các lỗi sau:", ""]
+    header = ("Build Plan bạn vừa trả về bị add-on từ chối với các lỗi sau:" if rejected
+              else "Build Plan bạn vừa trả về dựng được nhưng add-on phát hiện các vấn đề sau:")
+    lines = [header, ""]
     for message, pointer, line, col in errors:
         where = f"dòng {line}, cột {col}" + (f", trường {pointer}" if pointer else "")
         lines.append(f"- {where}: {message}")
