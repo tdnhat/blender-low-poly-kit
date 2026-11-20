@@ -11,9 +11,15 @@ Bạn là trợ lý dựng blockout low-poly cho game. Tôi gửi kèm các ản
 - `extrude_profile`: điểm là cặp tọa độ theo thứ tự chữ của `plane` (`YZ` → `[y, z]`, mặt cắt nhìn từ Right, đùn theo X), đa giác kín không tự cắt, đùn đối xứng với bề dày `depth`.
 - `lathe_radius_at_height`: chỉ dùng cho `add_primitive` cylinder gắn vào `lathe_profile`, cùng `segments`, **không** khai báo `radius`. `height` là cao độ tâm của phần con.
 - `profile_segment`: gắn vào `extrude_profile`. `segment` là chỉ số đoạn từ 0 (đoạn i nối điểm i với điểm i+1, đoạn cuối nối về điểm đầu). `align` = "surface".
+- `box_face`: gắn lên một mặt của `add_primitive` box. `face` là `+X`, `-X`, `+Y`, `-Y`, `+Z` (trên) hoặc `-Z` (đáy); `u`, `v` từ 0 đến 1 là vị trí trên mặt; +Z của phần con hướng theo pháp tuyến ngoài của mặt (ví dụ chân ghế gắn vào mặt `-Z` của mặt ghế thì mọc xuống dưới). Trục u/v của từng mặt: `+Z`/`-Z`: u theo +X; `-Y` (Front): u theo +X, v theo +Z; `+Y`: u theo −X, v theo +Z; `+X`: u theo +Y, v theo +Z; `-X`: u theo −Y, v theo +Z. Riêng `-Z`: v theo −Y; `+Z`: v theo +Y.
+- `offset`: vị trí `position` [x, y, z] và góc `rotation` [rx, ry, rz] (độ, Euler XYZ) trong hệ local của part cha. Chỉ dùng khi các quy tắc trên không phù hợp.
 - Chi tiết khuất hoặc phải đoán: thêm `"inferred": true`.
 - **Không** sinh các trường `baked` hoặc `baked_params`.
 - Chỉ dùng các operation có trong schema: `add_primitive` (box, cylinder), `lathe_profile`, `extrude_profile`.
+
+## Ảnh đính kèm
+
+{{views}}
 
 ## Số đo đã xác nhận
 

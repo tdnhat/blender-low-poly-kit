@@ -5,123 +5,428 @@
   "description": "Blockout plan: parts built from primitives, lathe and extruded profiles. Lengths in metres, angles in degrees. Radii are face (apothem) radii: half the silhouette width seen from Front/Right.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "asset_name", "units", "parts"],
+  "required": [
+    "schema_version",
+    "asset_name",
+    "units",
+    "parts"
+  ],
   "properties": {
-    "schema_version": {"const": 1},
-    "asset_name": {"type": "string", "minLength": 1},
-    "units": {"const": "m"},
-    "parts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/part"}}
+    "schema_version": {
+      "const": 1
+    },
+    "asset_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "units": {
+      "const": "m"
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/part"
+      }
+    }
   },
   "$defs": {
-    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "maxLength": 48},
-    "segments": {"enum": [4, 8, 12, 16]},
-    "length": {"type": "number", "exclusiveMinimum": 0},
-    "point2": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "maxLength": 48
+    },
+    "segments": {
+      "enum": [
+        4,
+        8,
+        12,
+        16
+      ]
+    },
+    "length": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "point2": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number"
+      }
+    },
     "lathe_point": {
-      "type": "array", "minItems": 2, "maxItems": 2,
-      "prefixItems": [{"type": "number"}, {"type": "number", "minimum": 0}]
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ]
     },
     "part": {
       "oneOf": [
-        {"$ref": "#/$defs/lathe_profile"},
-        {"$ref": "#/$defs/extrude_profile"},
-        {"$ref": "#/$defs/box"},
-        {"$ref": "#/$defs/cylinder"}
+        {
+          "$ref": "#/$defs/lathe_profile"
+        },
+        {
+          "$ref": "#/$defs/extrude_profile"
+        },
+        {
+          "$ref": "#/$defs/box"
+        },
+        {
+          "$ref": "#/$defs/cylinder"
+        }
       ]
     },
     "lathe_profile": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "op", "segments", "caps", "profile_z_radius"],
+      "required": [
+        "id",
+        "op",
+        "segments",
+        "caps",
+        "profile_z_radius"
+      ],
       "properties": {
-        "id": {"$ref": "#/$defs/id"},
-        "op": {"const": "lathe_profile"},
-        "segments": {"$ref": "#/$defs/segments"},
-        "caps": {"enum": ["both", "top", "bottom", "none"]},
-        "profile_z_radius": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/lathe_point"}},
-        "inferred": {"type": "boolean"},
-        "attachment": {"$ref": "#/$defs/attachment"},
-        "baked": {"type": "boolean"},
-        "baked_params": {"type": "object"}
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "lathe_profile"
+        },
+        "segments": {
+          "$ref": "#/$defs/segments"
+        },
+        "caps": {
+          "enum": [
+            "both",
+            "top",
+            "bottom",
+            "none"
+          ]
+        },
+        "profile_z_radius": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/lathe_point"
+          }
+        },
+        "inferred": {
+          "type": "boolean"
+        },
+        "attachment": {
+          "$ref": "#/$defs/attachment"
+        },
+        "baked": {
+          "type": "boolean"
+        },
+        "baked_params": {
+          "type": "object"
+        }
       }
     },
     "extrude_profile": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "op", "plane", "depth", "caps", "profile"],
+      "required": [
+        "id",
+        "op",
+        "plane",
+        "depth",
+        "caps",
+        "profile"
+      ],
       "properties": {
-        "id": {"$ref": "#/$defs/id"},
-        "op": {"const": "extrude_profile"},
-        "plane": {"enum": ["YZ", "XZ", "XY"]},
-        "depth": {"$ref": "#/$defs/length"},
-        "caps": {"enum": ["both", "none"]},
-        "profile": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/point2"}},
-        "inferred": {"type": "boolean"},
-        "attachment": {"$ref": "#/$defs/attachment"},
-        "baked": {"type": "boolean"},
-        "baked_params": {"type": "object"}
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "extrude_profile"
+        },
+        "plane": {
+          "enum": [
+            "YZ",
+            "XZ",
+            "XY"
+          ]
+        },
+        "depth": {
+          "$ref": "#/$defs/length"
+        },
+        "caps": {
+          "enum": [
+            "both",
+            "none"
+          ]
+        },
+        "profile": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "$ref": "#/$defs/point2"
+          }
+        },
+        "inferred": {
+          "type": "boolean"
+        },
+        "attachment": {
+          "$ref": "#/$defs/attachment"
+        },
+        "baked": {
+          "type": "boolean"
+        },
+        "baked_params": {
+          "type": "object"
+        }
       }
     },
     "box": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "op", "shape", "size"],
+      "required": [
+        "id",
+        "op",
+        "shape",
+        "size"
+      ],
       "properties": {
-        "id": {"$ref": "#/$defs/id"},
-        "op": {"const": "add_primitive"},
-        "shape": {"const": "box"},
-        "size": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/length"}},
-        "inferred": {"type": "boolean"},
-        "attachment": {"$ref": "#/$defs/attachment"},
-        "baked": {"type": "boolean"},
-        "baked_params": {"type": "object"}
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_primitive"
+        },
+        "shape": {
+          "const": "box"
+        },
+        "size": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/length"
+          }
+        },
+        "inferred": {
+          "type": "boolean"
+        },
+        "attachment": {
+          "$ref": "#/$defs/attachment"
+        },
+        "baked": {
+          "type": "boolean"
+        },
+        "baked_params": {
+          "type": "object"
+        }
       }
     },
     "cylinder": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "op", "shape", "segments", "height"],
+      "required": [
+        "id",
+        "op",
+        "shape",
+        "segments",
+        "height"
+      ],
       "properties": {
-        "id": {"$ref": "#/$defs/id"},
-        "op": {"const": "add_primitive"},
-        "shape": {"const": "cylinder"},
-        "segments": {"$ref": "#/$defs/segments"},
-        "radius": {"$ref": "#/$defs/length"},
-        "height": {"$ref": "#/$defs/length"},
-        "inferred": {"type": "boolean"},
-        "attachment": {"$ref": "#/$defs/attachment"},
-        "baked": {"type": "boolean"},
-        "baked_params": {"type": "object"}
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_primitive"
+        },
+        "shape": {
+          "const": "cylinder"
+        },
+        "segments": {
+          "$ref": "#/$defs/segments"
+        },
+        "radius": {
+          "$ref": "#/$defs/length"
+        },
+        "height": {
+          "$ref": "#/$defs/length"
+        },
+        "inferred": {
+          "type": "boolean"
+        },
+        "attachment": {
+          "$ref": "#/$defs/attachment"
+        },
+        "baked": {
+          "type": "boolean"
+        },
+        "baked_params": {
+          "type": "object"
+        }
       }
     },
     "attachment": {
       "oneOf": [
-        {"$ref": "#/$defs/lathe_radius_at_height"},
-        {"$ref": "#/$defs/profile_segment"}
+        {
+          "$ref": "#/$defs/lathe_radius_at_height"
+        },
+        {
+          "$ref": "#/$defs/profile_segment"
+        },
+        {
+          "$ref": "#/$defs/box_face"
+        },
+        {
+          "$ref": "#/$defs/offset"
+        }
       ]
     },
     "lathe_radius_at_height": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["parent_id", "rule", "height", "radial_offset"],
+      "required": [
+        "parent_id",
+        "rule",
+        "height",
+        "radial_offset"
+      ],
       "properties": {
-        "parent_id": {"$ref": "#/$defs/id"},
-        "rule": {"const": "lathe_radius_at_height"},
-        "height": {"type": "number"},
-        "radial_offset": {"type": "number"}
+        "parent_id": {
+          "$ref": "#/$defs/id"
+        },
+        "rule": {
+          "const": "lathe_radius_at_height"
+        },
+        "height": {
+          "type": "number"
+        },
+        "radial_offset": {
+          "type": "number"
+        }
       }
     },
     "profile_segment": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["parent_id", "rule", "segment", "t", "normal_offset", "align"],
+      "required": [
+        "parent_id",
+        "rule",
+        "segment",
+        "t",
+        "normal_offset",
+        "align"
+      ],
       "properties": {
-        "parent_id": {"$ref": "#/$defs/id"},
-        "rule": {"const": "profile_segment"},
-        "segment": {"type": "integer", "minimum": 0},
-        "t": {"type": "number", "minimum": 0, "maximum": 1},
-        "normal_offset": {"type": "number"},
-        "align": {"const": "surface"}
+        "parent_id": {
+          "$ref": "#/$defs/id"
+        },
+        "rule": {
+          "const": "profile_segment"
+        },
+        "segment": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "t": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "normal_offset": {
+          "type": "number"
+        },
+        "align": {
+          "const": "surface"
+        }
+      }
+    },
+    "vec3": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "number"
+      }
+    },
+    "box_face": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_id",
+        "rule",
+        "face",
+        "u",
+        "v",
+        "normal_offset",
+        "align"
+      ],
+      "properties": {
+        "parent_id": {
+          "$ref": "#/$defs/id"
+        },
+        "rule": {
+          "const": "box_face"
+        },
+        "face": {
+          "enum": [
+            "+X",
+            "-X",
+            "+Y",
+            "-Y",
+            "+Z",
+            "-Z"
+          ]
+        },
+        "u": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "v": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "normal_offset": {
+          "type": "number"
+        },
+        "align": {
+          "const": "surface"
+        }
+      }
+    },
+    "offset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_id",
+        "rule",
+        "position",
+        "rotation"
+      ],
+      "properties": {
+        "parent_id": {
+          "$ref": "#/$defs/id"
+        },
+        "rule": {
+          "const": "offset"
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotation": {
+          "$ref": "#/$defs/vec3",
+          "description": "Euler XYZ degrees, in the parent's local frame."
+        }
       }
     }
   }

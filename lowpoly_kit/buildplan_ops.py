@@ -23,8 +23,9 @@ def _active_text_root(context):
     return None, text
 
 
-def _report_errors(op, errors, text=None):
-    runtime.plan_errors = [(e.code, e.params, e.line, e.col) for e in errors]
+def _report_errors(op, errors, text=None, draft=""):
+    runtime.plan_errors = [(e.code, e.params, e.line, e.col, e.pointer) for e in errors]
+    runtime.plan_last_draft = draft
     if text is not None and errors and hasattr(text, "cursor_set"):
         try:
             text.cursor_set(max(0, errors[0].line - 1), character=max(0, errors[0].col - 1))
@@ -47,7 +48,7 @@ def run_plan(op, context, root, text_value, mode, source_text=None):
     registry = store.read_registry(root) if root else {}
     result = core_rc.reconcile(text_value, mode, root.name if root else None, objects, registry)
     if result.errors:
-        _report_errors(op, result.errors, source_text)
+        _report_errors(op, result.errors, source_text, text_value)
         if root is not None:
             store.append_log(root, {"mode": mode, "ok": False, "errors": [e.code for e in result.errors]})
         return {"CANCELLED"}
@@ -150,7 +151,7 @@ class LPK_OT_plan_bake(bpy.types.Operator):
             return {"CANCELLED"}
         plan, errors = core_validate.validate_text(text.as_string(), mode="editor")
         if errors:
-            _report_errors(self, errors, text)
+            _report_errors(self, errors, text, text.as_string())
             return {"CANCELLED"}
         part_id = str(obj[store.PART_PROP])
         try:
@@ -177,9 +178,149 @@ class LPK_OT_plan_copy_prompt(bpy.types.Operator):
             return {"CANCELLED"}
         ms, _views = reference.measurements(context.scene)
         rows = [(m.view, m.dimension, m.meters) for m in ms]
-        context.window_manager.clipboard = core_prompt.build_prompt(asset_name, core_validate.schema_text(), rows)
-        self.report({"INFO"}, f"Đã chép prompt cho {asset_name} ({len(rows)} số đo)")
+        views = [(e[reference.VIEW_PROP], bool(reference.read_data(e).get("cal")))
+                 for e in reference.ref_empties(context.scene)]
+        context.window_manager.clipboard = core_prompt.build_prompt(asset_name, core_validate.schema_text(), rows, views)
+        missing = [v for v, ok in views if not ok]
+        msg = f"Đã chép prompt cho {asset_name} ({len(rows)} số đo). Nhớ đính kèm ảnh: {', '.join(v for v, _ in views) or 'các ảnh ortho'}"
+        if missing:
+            msg += f". Chưa căn scale: {', '.join(missing)}"
+        self.report({"INFO"}, msg)
         return {"FINISHED"}
+
+
+class LPK_OT_plan_copy_errors(bpy.types.Operator):
+    bl_idname = "lpk.plan_copy_errors"
+    bl_label = "Copy lỗi cho chatbot"
+    bl_description = "Chép danh sách lỗi (kèm JSON đã gửi) để dán lại cho chatbot sửa"
+
+    @classmethod
+    def poll(cls, context):
+        return bool(runtime.plan_errors)
+
+    def execute(self, context):
+        rows = [(messages.text(code, params), pointer, line, col) for code, params, line, col, pointer in runtime.plan_errors]
+        context.window_manager.clipboard = core_prompt.build_error_prompt(rows, runtime.plan_last_draft)
+        self.report({"INFO"}, f"Đã chép {len(rows)} lỗi; dán vào cuộc trò chuyện với chatbot")
+        return {"FINISHED"}
+
+
+SEGMENT_ITEMS = [("4", "4", ""), ("8", "8", ""), ("12", "12", ""), ("16", "16", "")]
+CAPS_ITEMS = [("both", "Hai đầu", ""), ("top", "Trên", ""), ("bottom", "Dưới", ""), ("none", "Không", "")]
+FACE_ITEMS = [(f, f, "") for f in ("+X", "-X", "+Y", "-Y", "+Z", "-Z")]
+PLANE_ITEMS = [("YZ", "YZ (Right)", ""), ("XZ", "XZ (Front)", ""), ("XY", "XY (Top)", "")]
+
+
+class LPK_OT_plan_edit_part(bpy.types.Operator):
+    bl_idname = "lpk.plan_edit_part"
+    bl_label = "Chỉnh part"
+    bl_description = "Chỉnh tham số của part đang chọn rồi dựng lại (ghi vào plan)"
+    bl_options = {"REGISTER", "UNDO"}
+
+    part_id: bpy.props.StringProperty()
+    kind: bpy.props.StringProperty(options={"HIDDEN"})
+    rule: bpy.props.StringProperty(options={"HIDDEN"})
+    segments: bpy.props.EnumProperty(name="Số cạnh", items=SEGMENT_ITEMS)
+    caps: bpy.props.EnumProperty(name="Nắp", items=CAPS_ITEMS)
+    plane: bpy.props.EnumProperty(name="Mặt phẳng", items=PLANE_ITEMS)
+    size: bpy.props.FloatVectorProperty(name="Kích thước", size=3, min=0.0001, unit="LENGTH")
+    radius: bpy.props.FloatProperty(name="Bán kính (tới mặt)", min=0.0001, unit="LENGTH")
+    height: bpy.props.FloatProperty(name="Chiều cao", min=0.0001, unit="LENGTH")
+    depth: bpy.props.FloatProperty(name="Bề dày đùn", min=0.0001, unit="LENGTH")
+    radius_scale: bpy.props.FloatProperty(name="Hệ số bán kính", default=1.0, min=0.01)
+    height_scale: bpy.props.FloatProperty(name="Hệ số chiều cao", default=1.0, min=0.01)
+    profile_scale: bpy.props.FloatVectorProperty(name="Hệ số profile", size=2, default=(1.0, 1.0), min=0.01)
+    att_height: bpy.props.FloatProperty(name="Cao độ gắn", unit="LENGTH")
+    att_radial_offset: bpy.props.FloatProperty(name="Khoảng nhô", unit="LENGTH")
+    att_segment: bpy.props.IntProperty(name="Đoạn profile", min=0)
+    att_t: bpy.props.FloatProperty(name="Vị trí t", min=0.0, max=1.0)
+    att_normal_offset: bpy.props.FloatProperty(name="Khoảng nhô", unit="LENGTH")
+    att_face: bpy.props.EnumProperty(name="Mặt", items=FACE_ITEMS)
+    att_u: bpy.props.FloatProperty(name="u", min=0.0, max=1.0)
+    att_v: bpy.props.FloatProperty(name="v", min=0.0, max=1.0)
+    att_position: bpy.props.FloatVectorProperty(name="Vị trí", size=3, unit="LENGTH")
+    att_rotation: bpy.props.FloatVectorProperty(name="Góc (độ)", size=3)
+
+    _fields = ()
+    _att_fields = ()
+    _scales = ()
+
+    def _load(self, context):
+        obj = context.active_object
+        if obj is None or store.PART_PROP not in obj:
+            return None, None, "Chọn một object do Build Plan tạo"
+        if store.BAKED_PROP in obj:
+            return None, None, "Part đã bake; chỉnh trực tiếp trong Edit Mode"
+        root = adapters.get_root_object(context, obj)
+        text = store.plan_text(root) if root else None
+        if text is None:
+            return None, None, "Không tìm thấy plan của asset"
+        plan, errors = core_validate.validate_text(text.as_string(), mode="editor")
+        if errors:
+            return None, None, "Plan trong Text Editor đang lỗi; sửa rồi Rebuild trước"
+        return root, plan, None
+
+    def invoke(self, context, event):
+        from .core.buildplan import edit as core_edit
+
+        root, plan, err = self._load(context)
+        if err:
+            self.report({"WARNING"}, err)
+            return {"CANCELLED"}
+        self.part_id = str(context.active_object[store.PART_PROP])
+        part = core_edit.find_part(plan, self.part_id)
+        self.kind = core_edit.part_kind(part)
+        self.rule = part.get("attachment", {}).get("rule", "")
+        fields, att_fields, _scales = core_edit.editable_fields(part)
+        for f in fields:
+            value = part[f] if f in part else None
+            if value is None:
+                continue
+            setattr(self, f, str(value) if f == "segments" else value)
+        for f in att_fields:
+            setattr(self, "att_" + f, part["attachment"][f])
+        self.radius_scale = self.height_scale = 1.0
+        self.profile_scale = (1.0, 1.0)
+        return context.window_manager.invoke_props_dialog(self, width=360)
+
+    def draw(self, context):
+        from .core.buildplan import edit as core_edit
+
+        layout = self.layout
+        layout.label(text=f"Part '{self.part_id}' ({self.kind})")
+        fake = {"op": "add_primitive" if self.kind in ("box", "cylinder") else self.kind, "shape": self.kind}
+        if self.rule:
+            fake["attachment"] = {"rule": self.rule}
+        fields, att_fields, scales = core_edit.editable_fields(fake)
+        for f in fields + scales:
+            layout.prop(self, f)
+        if att_fields:
+            box = layout.box()
+            box.label(text=f"Gắn: {self.rule}")
+            for f in att_fields:
+                box.prop(self, "att_" + f)
+
+    def execute(self, context):
+        from .core.buildplan import edit as core_edit
+
+        root, plan, err = self._load(context)
+        if err:
+            self.report({"WARNING"}, err)
+            return {"CANCELLED"}
+        part = core_edit.find_part(plan, self.part_id)
+        fields, att_fields, scales = core_edit.editable_fields(part)
+        changes = {}
+        for f in fields:
+            value = getattr(self, f)
+            changes[f] = int(value) if f == "segments" else (list(value) if f == "size" else value)
+        for f in att_fields:
+            value = getattr(self, "att_" + f)
+            changes["att." + f] = list(value) if f in ("position", "rotation") else value
+        for f in scales:
+            value = getattr(self, f)
+            changes[f] = list(value) if f == "profile_scale" else value
+        new_plan = core_edit.edit_part(plan, self.part_id, changes)
+        return run_plan(self, context, root, core_rc.dump_plan(new_plan), "editor")
 
 
 class LPK_OT_plan_clear_registry(bpy.types.Operator):
@@ -302,12 +443,14 @@ class LPK_PT_plan_text(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         layout.operator("lpk.plan_rebuild", icon="FILE_REFRESH")
-        for code, params, line, col in runtime.plan_errors[:8]:
+        if runtime.plan_errors:
+            layout.operator("lpk.plan_copy_errors", icon="COPYDOWN")
+        for code, params, line, col, _pointer in runtime.plan_errors[:8]:
             layout.label(text=f"{line}:{col} {messages.text(code, params)}", icon="ERROR")
 
 
 classes = (LPK_OT_plan_paste, LPK_OT_plan_rebuild, LPK_OT_plan_open, LPK_OT_plan_bake, LPK_OT_plan_copy_prompt,
-           LPK_OT_plan_clear_registry, LPK_OT_plan_render_mask, LPK_PT_plan_text)
+           LPK_OT_plan_copy_errors, LPK_OT_plan_edit_part, LPK_OT_plan_clear_registry, LPK_OT_plan_render_mask, LPK_PT_plan_text)
 
 
 def register():

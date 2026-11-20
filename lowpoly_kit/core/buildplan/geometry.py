@@ -153,6 +153,30 @@ def segment_frame(plane, profile, segment, t, normal_offset):
     return vm.from_axes(x_axis, y_axis, z_axis, origin)
 
 
+# face: (outward normal Z, in-plane X); Y = Z x X
+BOX_FACES = {
+    "+Z": ((0, 0, 1), (1, 0, 0)),
+    "-Z": ((0, 0, -1), (1, 0, 0)),
+    "+X": ((1, 0, 0), (0, 1, 0)),
+    "-X": ((-1, 0, 0), (0, -1, 0)),
+    "+Y": ((0, 1, 0), (-1, 0, 0)),
+    "-Y": ((0, -1, 0), (1, 0, 0)),
+}
+
+
+def box_face_frame(size, face, u, v, normal_offset):
+    """Attachment frame on a box face. ``u``/``v`` run 0..1 along the face's
+    local X / Y; +Z of the frame is the face's outward normal."""
+    sx, sy, sz = size
+    z_axis, x_axis = (tuple(float(c) for c in a) for a in BOX_FACES[face])
+    y_axis = vm.cross(z_axis, x_axis)
+    center = (z_axis[0] * sx / 2.0, z_axis[1] * sy / 2.0, sz / 2.0 + z_axis[2] * sz / 2.0)
+    extent = lambda axis: abs(axis[0]) * sx + abs(axis[1]) * sy + abs(axis[2]) * sz  # noqa: E731
+    origin = vm.add(center, vm.add(vm.mul(x_axis, (u - 0.5) * extent(x_axis)),
+                                   vm.add(vm.mul(y_axis, (v - 0.5) * extent(y_axis)), vm.mul(z_axis, normal_offset))))
+    return vm.from_axes(x_axis, y_axis, z_axis, origin)
+
+
 def lathe_radius_at(profile, z):
     for (z0, r0), (z1, r1) in zip(profile, profile[1:]):
         if z0 <= z <= z1:

@@ -81,7 +81,7 @@ v0.1 không có nút **Sửa tất cả**: mỗi fix chạy riêng từ dòng l�
 
 PoC giới hạn **2 tuần** và có **một người phụ trách** được chỉ định. Hết thời gian thì đánh giá bằng số liệu đang có, không kéo dài. Nếu chỉ có một dev, ưu tiên v0.1 và chạy PoC sau khi luồng Reference xong, vì PoC dùng lại phần căn ảnh.
 
-Ưu tiên dựng và kiểm hai JSON viết tay cho Barrel và Terminal, sau đó chạy phép so sánh với plan từ chatbot. Trong PoC, artist có thể sửa JSON trong Text Editor rồi rebuild. Kiểm thử lưu và mở lại `.blend`, giao diện chỉnh tham số riêng và đo profile tự động được xếp sau phép thử chính.
+Ưu tiên dựng và kiểm hai JSON viết tay cho Barrel và Terminal, sau đó chạy phép so sánh với plan từ chatbot. Trong PoC, artist có thể sửa JSON trong Text Editor rồi rebuild, hoặc dùng **Chỉnh part** để đổi tham số của part đang chọn qua hộp thoại (số cạnh, kích thước, hệ số profile, tham số gắn). Khi plan bị từ chối, **Copy lỗi cho chatbot** chép danh sách lỗi kèm JSON đã gửi để hỏi lại. Copy Prompt liệt kê các view đã nạp và view nào chưa căn scale, để artist đính kèm đủ ảnh. Kiểm thử lưu và mở lại `.blend`, giao diện chỉnh tham số riêng và đo profile tự động được xếp sau phép thử chính.
 
 ### Hợp đồng dữ liệu
 
@@ -114,8 +114,8 @@ JSON chứa đủ dữ liệu hình học để bộ dựng có thể tạo mesh
 | --- | --- | --- |
 | `lathe_radius_at_height` | `parent_id`, `height`, `radial_offset` | Cha là `lathe_profile`, con là `add_primitive` cylinder cùng `segments` với cha và không khai báo `radius`. Phần con đồng trục với cha. Bán kính của con bằng bán kính lớn nhất của profile cha trên khoảng chiều cao mà con chiếm, cộng `radial_offset`, để không đầu nào của con chìm vào thân. Dùng cho đai, nắp, vành. |
 | `profile_segment` | `parent_id`, `segment`, `t`, `normal_offset`, `align` | Cha là `extrude_profile`. `segment` là chỉ số từ 0, tính cả đoạn từ điểm cuối về điểm đầu. Lấy điểm theo `t` từ đầu đến cuối đoạn, tại giữa bề dày đùn, rồi dịch `normal_offset` theo pháp tuyến ngoài của mặt. Đặt gốc local của phần con tại điểm đó. Với `align: "surface"`, trục +X local của con theo chiều dương của trục đùn, +Z theo pháp tuyến ngoài và +Y = +Z × +X. |
-
-Quy tắc `offset` cho vị trí và góc tương đối trong hệ local của cha được xếp sau PoC.
+| `box_face` | `parent_id`, `face`, `u`, `v`, `normal_offset`, `align` | Cha là `add_primitive` box. `face` là `+X`, `-X`, `+Y`, `-Y`, `+Z` hoặc `-Z`; `u`, `v` từ 0 đến 1 là vị trí trên mặt. +Z local của con theo pháp tuyến ngoài của mặt, gốc local của con đặt tại điểm (u, v) dịch `normal_offset`. Trục u/v của mặt: `+Z` (u +X, v +Y), `-Z` (u +X, v −Y), `-Y` (u +X, v +Z), `+Y` (u −X, v +Z), `+X` (u +Y, v +Z), `-X` (u −Y, v +Z). Dùng cho chân ghế, tựa lưng, tay cầm. |
+| `offset` | `parent_id`, `position`, `rotation` | Vị trí (mét) và góc Euler XYZ (độ) trong hệ local của cha, với mọi kiểu cha. Dùng khi các quy tắc trên không phù hợp. |
 
 Ví dụ rút gọn với hai phần của `PR_Barrel`. Bán kính trong profile là bán kính tới mặt, đo trực tiếp từ nửa bề rộng thân trên ảnh Front. Đai đặc trong PoC là khối đại diện, bán kính lấy từ tiết diện lớn nhất của thân trong khoảng chiều cao của đai, cộng khoảng nhô.
 
@@ -224,7 +224,7 @@ Ví dụ rút gọn với hai phần của `PR_Terminal`. Thân là mặt cắt 
 | PoC Build Plan, tối đa 2 tuần, chạy song song v0.1 nếu đủ người | Barrel và Terminal, ba phép dựng, quy tắc gắn cho đai và bàn phím, schema v1 kèm `buildplan.schema.json`, mẫu prompt v1, preview, sửa JSON và rebuild, bake từng phần | JSON viết tay dựng ra mesh thực và khớp tỷ lệ các view. Kiểm được quan hệ phụ thuộc, kể cả sau khi bake phần cha, và cách rebuild xử lý part bị xóa. Báo cáo kết quả phép so sánh theo ngưỡng quyết định hoặc ghi rõ dữ liệu còn thiếu khi hết hai tuần. |
 | v0.1 | Reference, dựng tay, palette, checker thiết yếu, config và export static prop | Hai bạn mới tự làm xong một prop từ ảnh ref đến `.glb` mà không cần senior thao tác hộ. Lead xác nhận kích thước, hướng, pivot, màu và đủ bộ phận trong Godot. |
 | v0.2 | Cải thiện theo feedback v0.1. Ưu tiên primitive low-poly, preset Mirror/flat shade và tip. | Các lỗi trong bài dùng thử được xử lý. Build Plan vào sidebar khi PoC đạt ngưỡng quyết định. |
-| Backlog | Contours theo cảm hứng RetopoFlow, collision cho prop, xuất Empty thành Node3D cho bản lề và điểm gắn, quy tắc gắn `offset`, bỏ bake, preview Decimate, nhân vật và rig, shape key, batch export, báo cáo checker, tích hợp API | Đánh giá khi có asset và nhu cầu cụ thể. Với Decimate, thử silhouette, cạnh sắc và ranh giới vertex color trước khi đưa ra preset. |
+| Backlog | Contours theo cảm hứng RetopoFlow, collision cho prop, xuất Empty thành Node3D cho bản lề và điểm gắn, bỏ bake, preview Decimate, nhân vật và rig, shape key, batch export, báo cáo checker, tích hợp API | Đánh giá khi có asset và nhu cầu cụ thể. Với Decimate, thử silhouette, cạnh sắc và ranh giới vertex color trước khi đưa ra preset. |
 
 ## Kiến trúc và kiểm thử
 

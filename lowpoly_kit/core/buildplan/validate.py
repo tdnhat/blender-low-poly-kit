@@ -163,6 +163,10 @@ def _semantic(plan, col, mode):
             if att["segment"] >= n:
                 col.add("plan_segment_range", {"id": p["id"], "segment": att["segment"], "parent": parent["id"], "max": n - 1},
                         ptr + "/segment")
+        elif rule == "box_face":
+            if not (parent["op"] == "add_primitive" and parent.get("shape") == "box"):
+                col.add("plan_rule_parent_type", {"id": p["id"], "rule": rule, "expected": "add_primitive box",
+                                                  "parent": parent["id"], "actual": parent["op"]}, ptr + "/parent_id")
 
     cycle = find_cycle({pid: q["attachment"]["parent_id"] for pid, q in by_id.items()
                         if "attachment" in q and q["attachment"]["parent_id"] in by_id})

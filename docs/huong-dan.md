@@ -46,9 +46,13 @@ Panel **Build Plan (PoC)** (đóng mặc định):
 1. **Copy Prompt**: chép prompt gồm schema và các số đo đã xác nhận ở bước Reference. Dán vào claude.ai hoặc ChatGPT kèm ảnh ortho (chỉ ảnh team cho phép gửi), rồi copy JSON chatbot trả về.
 2. **Dán Plan**: dựng blockout từ JSON trong clipboard. Chưa chọn root thì add-on tạo root từ `asset_name`. Part ước lượng (`inferred`) có object color cam (bật Viewport Shading › Color › Object để thấy).
 3. **Mở plan** / **Rebuild**: plan nằm trong Text `<root>.buildplan.json`. Sửa JSON trong Text Editor rồi bấm **Rebuild** (có cả ở sidebar Text Editor). Lỗi hiện theo dòng:cột và con trỏ nhảy tới chỗ lỗi; dựng lỗi thì giữ bản dựng gần nhất.
-4. **Bake part**: chọn object của một part rồi bake để giữ mesh và transform khi rebuild; phần con gắn vào part đó dựng theo snapshot lúc bake.
-5. **Đo PoC**: chọn ảnh tham chiếu đã căn và mask tham chiếu (PNG), bấm **Render mask** để render silhouette và xem sai số đường bao. Ngoài Blender:
+4. **Chỉnh part**: chọn object của một part (chưa bake) rồi bấm **Chỉnh part** để đổi số cạnh, kích thước, hệ số bán kính/chiều cao/profile và tham số gắn; add-on ghi vào plan và dựng lại.
+5. **Copy lỗi cho chatbot**: khi plan bị từ chối, nút này chép danh sách lỗi (dòng, trường) kèm JSON đã gửi; dán lại vào cuộc trò chuyện để chatbot sửa.
+6. **Bake part**: chọn object của một part rồi bake để giữ mesh và transform khi rebuild; phần con gắn vào part đó dựng theo snapshot lúc bake.
+7. **Đo PoC**: chọn ảnh tham chiếu đã căn và mask tham chiếu (PNG), bấm **Render mask** để render silhouette và xem sai số đường bao. Ngoài Blender:
    - `python3 tools/poc_metrics.py outline reference.png model.png`
    - `python3 tools/poc_metrics.py fields build_log.jsonl` (lưu Text `<root>.buildplan.log.jsonl` ra file trước) để đếm thông số đã chỉnh.
 
-Ví dụ plan: `tests/fixtures/plans/barrel.json`, `tests/fixtures/plans/terminal.json`.
+Quy tắc gắn: `lathe_radius_at_height` (đai quanh khối tiện), `profile_segment` (lên mặt khối đùn), `box_face` (lên mặt hộp: chân ghế, tựa lưng), `offset` (vị trí, góc tự do trong hệ của cha).
+
+Ví dụ plan: `tests/fixtures/plans/barrel.json`, `terminal.json`, `chair.json`.

@@ -63,6 +63,12 @@ def attach_matrix(child, parent_eff, parent_computed):
         frame = geometry.segment_frame(parent_eff["plane"], parent_eff["profile"], att["segment"], att["t"],
                                        att["normal_offset"])
         return frame, {}
+    if rule == "box_face":
+        frame = geometry.box_face_frame(parent_eff["size"], att["face"], att["u"], att["v"], att["normal_offset"])
+        return frame, {}
+    if rule == "offset":
+        local = vm.matmul(vm.translation(att["position"]), vm.euler_xyz(att["rotation"]))
+        return local, {}
     raise ValueError(f"unsupported rule {rule}")
 
 

@@ -194,12 +194,17 @@ class LPK_PT_buildplan(_Panel, bpy.types.Panel):
             box = layout.box()
             state = "đã bake" if "lpk_baked_params" in obj else "preview"
             box.label(text=f"Part '{obj['lpk_part_id']}' ({state})", icon="MESH_CUBE")
-            box.operator("lpk.plan_bake", icon="FREEZE")
+            row = box.row(align=True)
+            if "lpk_baked_params" not in obj:
+                row.operator("lpk.plan_edit_part", icon="PREFERENCES")
+            row.operator("lpk.plan_bake", icon="FREEZE")
         box = layout.box()
         box.label(text="Đo PoC")
         box.prop(scene, "lpk_poc_reference_mask")
         box.operator("lpk.plan_render_mask", icon="RENDER_STILL")
-        for code, params, line, col_ in runtime.plan_errors[:6]:
+        if runtime.plan_errors:
+            layout.operator("lpk.plan_copy_errors", icon="COPYDOWN")
+        for code, params, line, col_, _pointer in runtime.plan_errors[:6]:
             layout.label(text=f"{line}:{col_} {messages.text(code, params)}", icon="ERROR")
         tip(layout, context, "Copy Prompt → gửi chatbot kèm ảnh → copy JSON", "→ Dán Plan. Part cam là chi tiết ước lượng",
             "(bật Viewport Shading › Color › Object để thấy).")

@@ -13,8 +13,10 @@ check_state = None
 # Last tri count shown in the asset panel: dict root_name, status (BudgetStatus)
 tri_cache = None
 
-# Last Build Plan errors shown in the UI: list of (code, params, line, col)
+# Last Build Plan errors shown in the UI: list of (code, params, line, col, pointer)
 plan_errors = []
+# Draft text of the last rejected plan (for "Copy lỗi cho chatbot")
+plan_last_draft = ""
 
 
 def invalidate_checks():
@@ -24,8 +26,9 @@ def invalidate_checks():
 
 
 def clear():
-    global config_result, check_state, plan_errors, tri_cache
+    global config_result, check_state, plan_errors, tri_cache, plan_last_draft
     config_result = None
     check_state = None
     plan_errors = []
+    plan_last_draft = ""
     tri_cache = None
