@@ -168,8 +168,12 @@ class LPK_PT_export(_Panel, bpy.types.Panel):
         layout = self.layout
         cfg = config_ui.get_config()
         layout.label(text=f"Thư mục: {cfg['export_dir']}/{cfg.get('export_subdir', '')}", icon="FILE_FOLDER")
+        root = adapters.get_root_object(context) if context.active_object else None
+        if root is not None:
+            layout.prop(root, "lpk_export_merge")
         layout.operator("lpk.export_godot", icon="EXPORT")
-        tip(layout, context, "Export chạy lại kiểm tra và bị chặn khi còn lỗi.")
+        tip(layout, context, "Export chạy lại kiểm tra và bị chặn khi còn lỗi.",
+            "Gộp mesh: nên bật cho prop tĩnh nhiều part (ít draw call).")
 
 
 class LPK_PT_buildplan(_Panel, bpy.types.Panel):

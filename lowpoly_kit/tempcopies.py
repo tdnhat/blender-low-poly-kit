@@ -77,12 +77,89 @@ class TempCopies:
             except ReferenceError:
                 pass
         self.copies = {}
+        merged = getattr(self, "merged_mesh", None)
+        if merged is not None:
+            try:
+                bpy.data.meshes.remove(merged)
+            except ReferenceError:
+                pass
+            self.merged_mesh = None
         if self.collection is not None:
             try:
                 bpy.data.collections.remove(self.collection)
             except ReferenceError:
                 pass
             self.collection = None
+
+    def merge_meshes(self, root_name, merged_name):
+        """Replace the mesh copies by one mesh parented to the root copy.
+
+        Each copy is evaluated (modifiers applied), moved into the root frame
+        and appended with bmesh; material slots are unified by material.
+        Only temporary data is touched: originals keep their meshes.
+        """
+        import bmesh
+        from mathutils import Matrix
+
+        root_key = self.scope.root
+        root_copy = self.copies[root_key]
+        to_root = root_copy.matrix_world.inverted()
+        depsgraph = self.context.evaluated_depsgraph_get()
+        materials = []
+        bm = bmesh.new()
+        temp_meshes = []
+        try:
+            for key in self.scope.meshes:
+                copy = self.copies[key]
+                mesh = bpy.data.meshes.new_from_object(copy.evaluated_get(depsgraph), preserve_all_data_layers=True,
+                                                       depsgraph=depsgraph)
+                temp_meshes.append(mesh)
+                m = to_root @ copy.matrix_world
+                mesh.transform(m)
+                if m.determinant() < 0:
+                    mesh.flip_normals()
+                remap = []
+                for mat in mesh.materials:
+                    if mat not in materials:
+                        materials.append(mat)
+                    remap.append(materials.index(mat))
+                if remap:
+                    idx = [0] * len(mesh.polygons)
+                    mesh.polygons.foreach_get("material_index", idx)
+                    mesh.polygons.foreach_set("material_index", [remap[i] if i < len(remap) else 0 for i in idx])
+                bm.from_mesh(mesh)
+            merged = bpy.data.meshes.new(merged_name)
+            bm.to_mesh(merged)
+        finally:
+            bm.free()
+            for mesh in temp_meshes:
+                bpy.data.meshes.remove(mesh)
+        for mat in materials:
+            merged.materials.append(mat)
+        from . import config_ui
+
+        attr = config_ui.get_config()["color_attribute"]
+        if attr in merged.color_attributes:
+            ca = merged.color_attributes
+            if hasattr(ca, "active_color_name"):
+                ca.active_color_name = attr
+            if hasattr(ca, "default_color_name"):
+                ca.default_color_name = attr
+
+        for key in list(self.scope.meshes):
+            copy = self.copies.pop(key)
+            self.original_names.pop(copy.name, None)
+            bpy.data.objects.remove(copy, do_unlink=True)
+        obj = bpy.data.objects.new(merged_name, merged)
+        self.collection.objects.link(obj)
+        obj.parent = root_copy
+        obj.matrix_parent_inverse = Matrix.Identity(4)
+        obj.matrix_world = root_copy.matrix_world.copy()
+        self.copies["__merged__"] = obj
+        self.original_names[obj.name] = merged_name
+        self.merged_mesh = merged
+        self.context.view_layer.update()
+        return obj
 
     def layer_collection(self):
         """LayerCollection of the temporary collection in the active view layer."""

@@ -59,9 +59,16 @@ Không có thao tác vát cạnh (bevel); artist sẽ vát trong Blender nếu c
 | `radius` cùng `lathe_radius_at_height` | Bỏ `radius`, add-on tự tính. |
 | `s` ngoài bề rộng thân | Lùi `s` vào trong, nhất là ở mũi/đuôi thon. |
 
+## Cấu trúc để artist dễ chỉnh
+
+- Gắn chi tiết vào part mà nó đặt lên: cột và lan can tầng thượng, bàn lái, đèn → `box_face` `+Z` của mái cabin (`u`/`v` theo vị trí trên mái); khung cửa sổ → mặt cabin; nắp → thùng; ròng rọc, móc → thanh ngang. Như vậy **Chỉnh part** trên cabin hoặc mái sẽ kéo theo mọi thứ.
+- Chuỗi chi tiết lặp lại (cột lan can, bậc thang) vẫn gắn vào part chứa chúng (boong, mái, dầm thang) chứ không vào thân bằng tọa độ tuyệt đối khi có part phù hợp.
+- Asset nhiều part (mức Chi tiết thường > 50 part): nhắc artist bật **Gộp mesh khi export** để Godot nhận một mesh.
+
 ## Lỗi validator không bắt được (tự kiểm bằng mắt và bảng khung bao)
 
 - Vị trí giải phẫu hoặc chức năng sai (vây ngực ở giữa thân, cabin ở đuôi trong khi ảnh ở mũi).
 - Hướng sai: đối chiếu ảnh Front (−Y) với phía của part.
 - Kích thước lệch số đo: so khung bao của thân với số đo đã xác nhận.
 - Chi tiết thò ra ngoài mép thân (lan can, thùng hàng ở mép boong).
+- Chi tiết gắn `offset` vào thân bằng tọa độ tuyệt đối trong khi có part cha phù hợp (khó chỉnh về sau).

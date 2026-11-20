@@ -31,6 +31,7 @@ Mở sidebar trong viewport 3D bằng phím **N** → tab **LowPoly Kit**.
 
 ### 5. Export Godot
 - **Export Godot** chạy lại kiểm tra, chặn khi còn Lỗi, hỏi xác nhận khi còn Cảnh báo, rồi xuất `<export_dir>/<export_subdir>/<tên root>.glb`.
+- **Gộp mesh khi export** (ô tích trong panel, lưu theo từng root): file `.glb` chỉ có một mesh `<tên root>_mesh`, Godot tạo một MeshInstance3D thay vì hàng trăm. Nên bật với asset nhiều part; tắt nếu bộ phận cần pivot riêng để chuyển động.
 - Đường dẫn bắt đầu bằng `//` tính theo file `.blend`, nên cần lưu file trước.
 - Add-on không sửa object của bạn khi export: nó xuất từ bản sao tạm, đưa root về gốc tọa độ và trả tên node về như cũ.
 - Xem nhanh file xuất: `python3 tools/inspect_glb.py path/to/PR_Barrel.glb`.

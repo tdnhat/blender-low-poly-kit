@@ -58,11 +58,15 @@ def export_asset(context):
 
     nodes = adapters.scene_index(context)
     scope = core_scope.collect(nodes, state["root"])
-    expected = [root_name] + [nodes[k].name for k in scope.meshes]
+    root_obj = bpy.data.objects.get(state["root"])
+    merge = bool(getattr(root_obj, "lpk_export_merge", False))
+    expected = export_post.expected_names(root_name, [nodes[k].name for k in scope.meshes], merge)
 
     with checker_ops.ModeGuard(context):
         try:
             with tempcopies.TempCopies(context, nodes, scope) as copies:
+                if merge:
+                    copies.merge_meshes(root_name, export_post.merged_node_name(root_name))
                 layer = copies.layer_collection()
                 if layer is None:
                     return False, messages.text("export_failed", {"reason": "không tìm thấy collection tạm"})
@@ -133,8 +137,13 @@ classes = (LPK_OT_export_godot,)
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.Object.lpk_export_merge = bpy.props.BoolProperty(
+        name="Gộp mesh khi export",
+        description="Bản .glb chứa một mesh duy nhất (ít draw call trong Godot); scene trong Blender vẫn giữ từng part",
+        default=False)
 
 
 def unregister():
+    del bpy.types.Object.lpk_export_merge
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

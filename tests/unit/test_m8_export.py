@@ -107,3 +107,17 @@ class Paths(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Merged(unittest.TestCase):
+    def test_expected_names(self):
+        self.assertEqual(export_post.expected_names("PR_Boat", ["Hull", "Cabin"], False), ["PR_Boat", "Hull", "Cabin"])
+        self.assertEqual(export_post.expected_names("PR_Boat", ["Hull", "Cabin"], True), ["PR_Boat", "PR_Boat_mesh"])
+
+    def test_postprocess_merged_file(self):
+        gltf = {"nodes": [{"name": "PR_Boat.001", "translation": [3, 0, 1], "children": [1]},
+                          {"name": "PR_Boat_mesh.001", "mesh": 0}]}
+        names = {"PR_Boat.001": "PR_Boat", "PR_Boat_mesh.001": "PR_Boat_mesh"}
+        post = export_post.postprocess(gltf, "PR_Boat", names, export_post.expected_names("PR_Boat", ["a", "b"], True))
+        self.assertEqual((post.missing, post.extra), ([], []))
+        self.assertNotIn("translation", post.gltf["nodes"][0])

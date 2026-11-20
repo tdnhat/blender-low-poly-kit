@@ -4,6 +4,17 @@ from collections import namedtuple
 
 PostResult = namedtuple("PostResult", "gltf node_names missing extra")
 
+MERGED_SUFFIX = "_mesh"
+
+
+def merged_node_name(root_name):
+    """Name of the single mesh node when the asset is merged on export."""
+    return root_name + MERGED_SUFFIX
+
+
+def expected_names(root_name, mesh_names, merged):
+    return [root_name, merged_node_name(root_name)] if merged else [root_name] + list(mesh_names)
+
 
 def postprocess(gltf, root_name, original_names, expected_names):
     """Return a PostResult with a modified copy of ``gltf``.
