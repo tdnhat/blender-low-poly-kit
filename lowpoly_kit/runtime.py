@@ -10,6 +10,9 @@ config_result = None
 #   root_key, results (list of core.checks.registry.CheckResult), stale (bool)
 check_state = None
 
+# Last tri count shown in the asset panel: dict root_name, status (BudgetStatus)
+tri_cache = None
+
 # Last Build Plan errors shown in the UI: list of (code, params, line, col)
 plan_errors = []
 
@@ -21,7 +24,8 @@ def invalidate_checks():
 
 
 def clear():
-    global config_result, check_state, plan_errors
+    global config_result, check_state, plan_errors, tri_cache
     config_result = None
     check_state = None
     plan_errors = []
+    tri_cache = None

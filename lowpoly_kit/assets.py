@@ -126,7 +126,21 @@ def asset_summary(context):
     return result, scope, status
 
 
-classes = (LPK_OT_create_root,)
+class LPK_OT_count_tris(bpy.types.Operator):
+    bl_idname = "lpk.count_tris"
+    bl_label = "Đếm tris"
+    bl_description = "Đếm tổng tris của asset (sau modifier) so với budget"
+
+    def execute(self, context):
+        result, _scope, status = asset_summary(context)
+        if status is None:
+            self.report({"WARNING"}, "Chưa xác định được asset root")
+            return {"CANCELLED"}
+        runtime.tri_cache = {"root": result.root, "status": status}
+        return {"FINISHED"}
+
+
+classes = (LPK_OT_create_root, LPK_OT_count_tris)
 
 
 def register():
