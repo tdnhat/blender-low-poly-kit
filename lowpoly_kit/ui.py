@@ -172,6 +172,35 @@ class LPK_PT_export(_Panel, bpy.types.Panel):
         tip(layout, context, "Export chạy lại kiểm tra và bị chặn khi còn lỗi.")
 
 
+class LPK_PT_buildplan(_Panel, bpy.types.Panel):
+    bl_idname = "LPK_PT_buildplan"
+    bl_label = "Build Plan (PoC)"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        root = adapters.get_root_object(context) if context.active_object else None
+        if root is None:
+            layout.prop(scene, "lpk_plan_asset_name")
+        col = layout.column(align=True)
+        col.operator("lpk.plan_copy_prompt", icon="COPYDOWN")
+        col.operator("lpk.plan_paste", icon="PASTEDOWN")
+        row = layout.row(align=True)
+        row.operator("lpk.plan_open", icon="TEXT")
+        row.operator("lpk.plan_rebuild", icon="FILE_REFRESH")
+        obj = context.active_object
+        if obj is not None and "lpk_part_id" in obj:
+            box = layout.box()
+            state = "đã bake" if "lpk_baked_params" in obj else "preview"
+            box.label(text=f"Part '{obj['lpk_part_id']}' ({state})", icon="MESH_CUBE")
+            box.operator("lpk.plan_bake", icon="FREEZE")
+        for code, params, line, col_ in runtime.plan_errors[:6]:
+            layout.label(text=f"{line}:{col_} {messages.text(code, params)}", icon="ERROR")
+        tip(layout, context, "Copy Prompt → gửi chatbot kèm ảnh → copy JSON", "→ Dán Plan. Part cam là chi tiết ước lượng",
+            "(bật Viewport Shading › Color › Object để thấy).")
+
+
 class LPK_PT_config(_Panel, bpy.types.Panel):
     bl_idname = "LPK_PT_config"
     bl_label = "Team config"
@@ -183,7 +212,8 @@ class LPK_PT_config(_Panel, bpy.types.Panel):
         config_ui.draw_config_status(layout)
 
 
-classes = (LPK_PT_reference, LPK_PT_asset, LPK_PT_color, LPK_PT_check, LPK_PT_export, LPK_PT_config)
+classes = (LPK_PT_reference, LPK_PT_asset, LPK_PT_color, LPK_PT_check, LPK_PT_export, LPK_PT_buildplan,
+           LPK_PT_config)
 
 
 def register():

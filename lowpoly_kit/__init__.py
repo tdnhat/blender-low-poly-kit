@@ -18,10 +18,11 @@ def _bpy_modules():
         coloring,
         export,
         reference,
+        buildplan_ops,
         ui,
     )
 
-    return [prefs, config_ui, assets, checker_ops, fix_ops, coloring, export, reference, ui]
+    return [prefs, config_ui, assets, checker_ops, fix_ops, coloring, export, reference, buildplan_ops, ui]
 
 
 def register():
