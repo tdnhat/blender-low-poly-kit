@@ -9,6 +9,24 @@ from .validate import topo_order
 ResolvedPart = namedtuple("ResolvedPart", "id op part geom matrix_root computed baked")
 
 NON_PARAM_KEYS = ("id", "attachment", "baked", "baked_params", "inferred")
+MIRROR_SUFFIX = "_mirror"
+_FLIP_X = vm.scaling((-1.0, 1.0, 1.0))
+
+
+def mirror_id(part_id):
+    return part_id + MIRROR_SUFFIX
+
+
+def mirrored(resolved):
+    """Copy of a resolved part reflected across the root's YZ plane.
+
+    The object matrix stays right-handed: M' = Fx @ M @ Fx, with the local
+    geometry reflected and its faces reversed, so world points are Fx @ M @ v
+    and no negative scale reaches the export.
+    """
+    matrix = vm.matmul(_FLIP_X, vm.matmul(resolved.matrix_root, _FLIP_X))
+    geom = None if resolved.geom is None else geometry.mirror_x(resolved.geom)
+    return ResolvedPart(mirror_id(resolved.id), resolved.op, resolved.part, geom, matrix, resolved.computed, resolved.baked)
 
 
 def part_params(part):
@@ -92,4 +110,9 @@ def resolve(plan):
             matrix = vm.matmul(parent.matrix_root, local)
         geom = None if baked else geometry.build(eff, computed)
         out[pid] = ResolvedPart(pid, eff["op"], part, geom, matrix, computed, baked)
-    return [out[pid] for pid in topo_order(plan["parts"])]
+    result = []
+    for pid in topo_order(plan["parts"]):
+        result.append(out[pid])
+        if parts[pid].get("mirror") == "X":
+            result.append(mirrored(out[pid]))
+    return result

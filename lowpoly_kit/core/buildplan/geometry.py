@@ -114,11 +114,29 @@ def ccw_about_axis(plane, profile):
     return geometry2d.signed_area(profile) * _handedness(plane) > 0
 
 
-def extrude(plane, profile, depth, caps):
+def thickness_at(thickness_profile, a):
+    """Full thickness at first-coordinate ``a`` (linear, clamped at the ends)."""
+    pts = sorted((float(p), float(t)) for p, t in thickness_profile)
+    if a <= pts[0][0]:
+        return pts[0][1]
+    for (p0, t0), (p1, t1) in zip(pts, pts[1:]):
+        if a <= p1:
+            return t0 + (t1 - t0) * ((a - p0) / (p1 - p0) if p1 > p0 else 0.0)
+    return pts[-1][1]
+
+
+def extrude(plane, profile, depth, caps, thickness_profile=None):
+    """Symmetric extrusion; with ``thickness_profile`` each profile point gets
+    its own thickness, read along the first profile coordinate (for a body
+    seen from Right/Front, the thickness comes from the Top view)."""
     profile = [tuple(p) for p in profile]
     m = len(profile)
-    half = depth / 2.0
-    verts = [profile_point_3d(plane, p, -half) for p in profile] + [profile_point_3d(plane, p, half) for p in profile]
+    if thickness_profile:
+        halves = [thickness_at(thickness_profile, p[0]) / 2.0 for p in profile]
+    else:
+        halves = [depth / 2.0] * m
+    verts = ([profile_point_3d(plane, p, -h) for p, h in zip(profile, halves)]
+             + [profile_point_3d(plane, p, h) for p, h in zip(profile, halves)])
     ccw = ccw_about_axis(plane, profile)
     faces = []
     for i in range(m):
@@ -177,6 +195,13 @@ def box_face_frame(size, face, u, v, normal_offset):
     return vm.from_axes(x_axis, y_axis, z_axis, origin)
 
 
+def mirror_x(geom):
+    """Geometry reflected across local x = 0, faces reversed to stay outward."""
+    verts = [(-x, y, z) for x, y, z in geom.verts]
+    faces = [tuple(reversed(f)) for f in geom.faces]
+    return MeshGeom(verts, faces)
+
+
 def lathe_radius_at(profile, z):
     for (z0, r0), (z1, r1) in zip(profile, profile[1:]):
         if z0 <= z <= z1:
@@ -197,7 +222,7 @@ def build(part, computed=None):
     if op == "lathe_profile":
         return lathe([tuple(p) for p in part["profile_z_radius"]], part["segments"], part["caps"])
     if op == "extrude_profile":
-        return extrude(part["plane"], part["profile"], part["depth"], part["caps"])
+        return extrude(part["plane"], part["profile"], part.get("depth"), part["caps"], part.get("thickness_profile"))
     if op == "add_primitive" and part["shape"] == "box":
         return box(part["size"])
     if op == "add_primitive" and part["shape"] == "cylinder":

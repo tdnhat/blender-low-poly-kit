@@ -28,6 +28,8 @@ def editable_fields(part):
     """(part field names, attachment field names, scale knobs) for the UI."""
     kind = part_kind(part)
     fields = list(PART_FIELDS.get(kind, ()))
+    if kind == "extrude_profile" and "thickness_profile" in part:
+        fields.remove("depth")
     if kind == "cylinder" and part.get("attachment", {}).get("rule") == "lathe_radius_at_height":
         fields.remove("radius")  # computed by the rule
     att = part.get("attachment")

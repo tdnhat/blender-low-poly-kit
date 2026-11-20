@@ -107,6 +107,13 @@ def _semantic(plan, col, mode):
                 if field in p:
                     col.add("plan_managed_field", {"id": p["id"], "field": field}, f"/parts/{i}/{field}")
 
+    for i, p in enumerate(parts):
+        if p.get("mirror") and p["id"] + "_mirror" in by_id:
+            col.add("plan_mirror_id_taken", {"id": p["id"], "mirror_id": p["id"] + "_mirror"}, f"/parts/{i}/mirror")
+        att = p.get("attachment")
+        if att and att.get("parent_id", "").endswith("_mirror") and att["parent_id"] not in by_id:
+            col.add("plan_parent_is_mirror", {"id": p["id"], "parent": att["parent_id"]}, f"/parts/{i}/attachment/parent_id")
+
     roots = [p["id"] for p in parts if "attachment" not in p]
     if len(roots) != 1:
         col.add("plan_root_count", {"count": len(roots), "ids": roots or ["-"]}, "/parts")
@@ -120,6 +127,13 @@ def _semantic(plan, col, mode):
             if any(r == 0 for _z, r in prof[1:-1]):
                 col.add("plan_profile_degenerate", {"id": p["id"]}, ptr + "/profile_z_radius")
         elif p["op"] == "extrude_profile":
+            has_depth, has_thick = "depth" in p, "thickness_profile" in p
+            if has_depth == has_thick:
+                col.add("plan_depth_or_thickness", {"id": p["id"]}, ptr)
+            if has_thick:
+                tp = p["thickness_profile"]
+                if any(tp[k + 1][0] <= tp[k][0] for k in range(len(tp) - 1)):
+                    col.add("plan_thickness_not_increasing", {"id": p["id"]}, ptr + "/thickness_profile")
             prof = [tuple(pt) for pt in p["profile"]]
             if geometry2d.has_duplicate_points(prof) or abs(geometry2d.signed_area(prof)) < 1e-12:
                 col.add("plan_profile_degenerate", {"id": p["id"]}, ptr + "/profile")

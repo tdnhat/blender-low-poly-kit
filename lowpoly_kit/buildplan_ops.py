@@ -268,7 +268,11 @@ class LPK_OT_plan_edit_part(bpy.types.Operator):
             self.report({"WARNING"}, err)
             return {"CANCELLED"}
         self.part_id = str(context.active_object[store.PART_PROP])
-        part = core_edit.find_part(plan, self.part_id)
+        try:
+            part = core_edit.find_part(plan, self.part_id)
+        except KeyError:
+            self.report({"WARNING"}, "Đây là bản đối xứng; chọn part gốc để chỉnh")
+            return {"CANCELLED"}
         self.kind = core_edit.part_kind(part)
         self.rule = part.get("attachment", {}).get("rule", "")
         fields, att_fields, _scales = core_edit.editable_fields(part)

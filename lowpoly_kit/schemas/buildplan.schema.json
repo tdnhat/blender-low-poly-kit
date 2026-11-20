@@ -121,6 +121,9 @@
             "$ref": "#/$defs/lathe_point"
           }
         },
+        "mirror": {
+          "$ref": "#/$defs/mirror"
+        },
         "inferred": {
           "type": "boolean"
         },
@@ -142,7 +145,6 @@
         "id",
         "op",
         "plane",
-        "depth",
         "caps",
         "profile"
       ],
@@ -163,6 +165,25 @@
         "depth": {
           "$ref": "#/$defs/length"
         },
+        "thickness_profile": {
+          "type": "array",
+          "minItems": 2,
+          "description": "Varying thickness along the first profile coordinate: [position, full thickness]. Use instead of depth.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            ]
+          }
+        },
         "caps": {
           "enum": [
             "both",
@@ -175,6 +196,9 @@
           "items": {
             "$ref": "#/$defs/point2"
           }
+        },
+        "mirror": {
+          "$ref": "#/$defs/mirror"
         },
         "inferred": {
           "type": "boolean"
@@ -216,6 +240,9 @@
           "items": {
             "$ref": "#/$defs/length"
           }
+        },
+        "mirror": {
+          "$ref": "#/$defs/mirror"
         },
         "inferred": {
           "type": "boolean"
@@ -259,6 +286,9 @@
         },
         "height": {
           "$ref": "#/$defs/length"
+        },
+        "mirror": {
+          "$ref": "#/$defs/mirror"
         },
         "inferred": {
           "type": "boolean"
@@ -428,6 +458,12 @@
           "description": "Euler XYZ degrees, in the parent's local frame."
         }
       }
+    },
+    "mirror": {
+      "enum": [
+        "X"
+      ],
+      "description": "Also build a copy mirrored across the root's YZ plane (x -> -x)."
     }
   }
 }
