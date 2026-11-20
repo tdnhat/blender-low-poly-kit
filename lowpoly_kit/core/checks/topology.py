@@ -9,7 +9,9 @@ from . import registry
 MeshData = namedtuple("MeshData", "verts edges faces det_sign")
 # verts: [(x, y, z)] local space; edges: [(a, b)] Blender edge list;
 # faces: [(v0, v1, ...)] polygon vertex loops; det_sign: sign of the world
-# matrix determinant (negative scale flips the meaning of the winding).
+# matrix determinant, kept for reporting only. Normals are judged in local
+# space: glTF (and Blender) flip the front-face winding when the global
+# determinant is negative, so a locally outward shell stays outward.
 
 AREA_EPS = 1e-12
 EDGE_EPS = 1e-7
@@ -156,7 +158,7 @@ def analyse(md, merge_distance):
         edges = {edge_key(a, b) for fi in comp for a, b in face_edges(md.faces[fi])}
         if edges & bad_edges:
             continue  # not a closed, consistently wound shell
-        if signed_volume(md, comp) * md.det_sign < 0:
+        if signed_volume(md, comp) < 0:
             inward_faces.extend(sorted(comp_set))
 
     return {

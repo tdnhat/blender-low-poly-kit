@@ -32,11 +32,12 @@ class Topology(unittest.TestCase):
         md = cube_mesh()
         inverted = topo.MeshData(md.verts, md.edges, [tuple(reversed(x)) for x in md.faces], 1)
         self.assertEqual(found(inverted).get("inward_normals"), list(range(6)))
+        # glTF flips front faces for a negative determinant: a locally outward
+        # shell under negative scale is still outward, an inverted one is not.
         mirrored = topo.MeshData(md.verts, md.edges, md.faces, -1)
-        self.assertEqual(found(mirrored).get("inward_normals"), list(range(6)))
-        # Inverted winding under a negative determinant looks correct after export.
+        self.assertEqual(found(mirrored), {})
         both = topo.MeshData(inverted.verts, inverted.edges, inverted.faces, -1)
-        self.assertEqual(found(both), {})
+        self.assertEqual(found(both).get("inward_normals"), list(range(6)))
 
     def test_three_face_edge_and_loose_and_ngon(self):
         md = cube_mesh()
